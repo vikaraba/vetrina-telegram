@@ -8,3 +8,7 @@ firmato da Telegram, quindi aprire questo indirizzo fuori da Telegram non mostra
 nulla.
 
 Il codice sorgente e le regole della vetrina stanno nel repository privato `CRM`.
+
+I link prodotto pubblicati su Telegram usano `startapp=product_<id>`. La
+pagina legge `Telegram.WebApp.initDataUnsafe.start_param` e apre direttamente
+la scheda richiesta, mantenendo la verifica server-side di `initData`.
