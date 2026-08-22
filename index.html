@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Каталог</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --sfondo: var(--tg-theme-bg-color, #ffffff);
+    --testo: var(--tg-theme-text-color, #101010);
+    --tenue: var(--tg-theme-hint-color, #7d7d7d);
+    --scheda: var(--tg-theme-secondary-bg-color, #f4f4f5);
+    --accento: var(--tg-theme-button-color, #2f81f7);
+    --su-accento: var(--tg-theme-button-text-color, #ffffff);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 14px 32px;
+    background: var(--sfondo); color: var(--testo);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { margin: 0 0 2px; font-size: 20px; letter-spacing: -0.02em; }
+  .sottotitolo { margin: 0 0 18px; color: var(--tenue); font-size: 13px; }
+  .griglia { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .articolo {
+    background: var(--scheda); border-radius: 14px; overflow: hidden;
+    display: flex; flex-direction: column; cursor: pointer;
+    border: 0; padding: 0; text-align: left; color: inherit; font: inherit;
+  }
+  .articolo img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--sfondo); }
+  .corpo { padding: 10px 11px 12px; display: grid; gap: 3px; }
+  .marca { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--tenue); text-transform: uppercase; }
+  .nome { font-size: 13px; line-height: 1.3; }
+  .prezzo { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stato { min-height: 60px; display: grid; place-items: center; color: var(--tenue); text-align: center; padding: 28px 8px; }
+
+  .velo { position: fixed; inset: 0; background: var(--sfondo); overflow-y: auto; padding: 16px 14px 120px; }
+  .velo[hidden] { display: none; }
+  .indietro { border: 0; background: none; color: var(--accento); font: inherit; padding: 0 0 14px; cursor: pointer; }
+  .velo img { width: 100%; border-radius: 14px; margin-bottom: 14px; }
+  .avviso { margin: 12px 0 16px; padding: 11px 13px; border-radius: 11px; background: var(--scheda); color: var(--tenue); font-size: 13px; }
+  .titolo-taglie { margin: 18px 0 8px; font-size: 13px; font-weight: 700; }
+  .taglie { display: flex; flex-wrap: wrap; gap: 8px; }
+  /* Una taglia esaurita resta visibile e barrata: chi trova la propria e la vede
+     sparire pensa che il modello non esista, chi la vede barrata chiede un'alternativa. */
+  .taglia {
+    min-width: 56px; padding: 10px 12px; border-radius: 10px; border: 1.5px solid transparent;
+    background: var(--scheda); color: var(--testo); font: inherit; font-variant-numeric: tabular-nums; cursor: pointer;
+  }
+  .taglia[aria-pressed="true"] { border-color: var(--accento); }
+  .taglia.esaurita { color: var(--tenue); text-decoration: line-through; cursor: not-allowed; opacity: .55; }
+  .conferma { position: fixed; left: 14px; right: 14px; bottom: 16px; }
+  .conferma button {
+    width: 100%; padding: 15px; border: 0; border-radius: 12px;
+    background: var(--accento); color: var(--su-accento); font: inherit; font-weight: 700; cursor: pointer;
+  }
+  .conferma button:disabled { opacity: .45; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<h1>Каталог</h1>
+<p class="sottotitolo" id="sottotitolo">Загружаем…</p>
+<div class="griglia" id="griglia"></div>
+<div class="stato" id="stato" hidden></div>
+
+<div class="velo" id="velo" hidden>
+  <button class="indietro" id="indietro">‹ Назад</button>
+  <div id="dettaglio"></div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.ready(); tg?.expand();
+
+const BASE = "https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront";
+const intestazioni = { "X-Telegram-Init-Data": tg?.initData ?? "" };
+const griglia = document.getElementById("griglia");
+const stato = document.getElementById("stato");
+const sottotitolo = document.getElementById("sottotitolo");
+const velo = document.getElementById("velo");
+const dettaglio = document.getElementById("dettaglio");
+let scelta = { prodotto: null, taglia: null };
+
+const euro = (valore) => Math.round(Number(valore)).toLocaleString("ru-RU") + " €";
+
+function mostraStato(testo) {
+  stato.textContent = testo; stato.hidden = false; griglia.hidden = true;
+}
+
+async function chiedi(percorso, opzioni = {}) {
+  const risposta = await fetch(BASE + percorso, {
+    ...opzioni,
+    headers: { ...intestazioni, ...(opzioni.headers ?? {}) },
+  });
+  const dati = await risposta.json();
+  if (!risposta.ok) throw new Error(dati.error ?? "Ошибка");
+  return dati;
+}
+
+async function caricaCatalogo() {
+  try {
+    const dati = await chiedi("?action=catalog");
+    if (!dati.items.length) { mostraStato("Пока пусто. Скоро добавим."); sottotitolo.textContent = ""; return; }
+    sottotitolo.textContent = dati.items.length + " " + (dati.items.length === 1 ? "модель" : "моделей") + " · под заказ";
+    griglia.innerHTML = dati.items.map((articolo) => `
+      <button class="articolo" data-id="${articolo.id}">
+        <img src="${articolo.imageUrl ?? ""}" alt="" loading="lazy">
+        <span class="corpo">
+          <span class="marca">${articolo.brand ?? ""}</span>
+          <span class="nome">${articolo.name}</span>
+          <span class="prezzo">${euro(articolo.priceEur)}</span>
+        </span>
+      </button>`).join("");
+    griglia.querySelectorAll(".articolo").forEach((nodo) =>
+      nodo.addEventListener("click", () => apriProdotto(Number(nodo.dataset.id))));
+  } catch (errore) {
+    mostraStato(errore.message === "Accesso non verificato"
+      ? "Откройте каталог через Telegram." : errore.message);
+    sottotitolo.textContent = "";
+  }
+}
+
+async function apriProdotto(id) {
+  try {
+    const p = await chiedi("?action=product&id=" + id);
+    scelta = { prodotto: p.id, taglia: null };
+    const taglie = p.sizes.map((t) => `
+      <button class="taglia ${t.orderable ? "" : "esaurita"}" data-taglia="${t.value}"
+        aria-pressed="false" ${t.orderable ? "" : "disabled"}>${t.value}</button>`).join("");
+    dettaglio.innerHTML = `
+      <img src="${p.imageUrl ?? ""}" alt="">
+      <div class="marca">${p.brand ?? ""}</div>
+      <h1>${p.name}</h1>
+      <div class="prezzo" style="font-size:22px;margin-top:6px">${euro(p.priceEur)}</div>
+      ${p.onDemand ? '<p class="avviso">Под заказ: привезём из Италии после подтверждения.</p>' : ""}
+      <div class="titolo-taglie">Размер</div>
+      <div class="taglie">${taglie || '<span class="sottotitolo">Один размер</span>'}</div>
+      <div class="conferma"><button id="ordina" disabled>Выберите размер</button></div>\
