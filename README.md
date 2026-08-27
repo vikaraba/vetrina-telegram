@@ -15,3 +15,9 @@ catalogo, entra nella modalita prodotto singolo: carica soltanto quel modello,
 le sue immagini e le sue taglie. L'API mantiene la verifica server-side di
 `initData`; un normale ingresso senza deep link continua invece a mostrare il
 catalogo.
+
+Ogni chiamata invia anche `x-telegram-client-context`, uno snapshot allowlistato
+e versionato di piattaforma/versione WebApp, tema, viewport, safe area, lingua,
+fuso e caratteristiche schermo. È contesto dichiarato dal client, separato
+dall'`initData` firmato: il backend lo marca `client_reported` e non lo usa mai
+come prova d'identità.
