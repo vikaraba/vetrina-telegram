@@ -26,10 +26,51 @@
     const dialog=document.getElementById("detail");
     const title=document.getElementById("title");
     const intro=document.getElementById("intro");
+    const pageSessionId=crypto.randomUUID?.()||String(Date.now())+"-"+Math.random().toString(16).slice(2);
     const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+    function clientContext(){
+      const screenInfo=window.screen||{};
+      return {
+        schema_version:"telegram-webapp-client-v1",
+        captured_at:new Date().toISOString(),
+        page_session_id:pageSessionId,
+        trust:"client_reported",
+        telegram_web_app:{
+          platform:tg?.platform??null,
+          version:tg?.version??null,
+          color_scheme:tg?.colorScheme??null,
+          theme_params:tg?.themeParams??null,
+          viewport_height:tg?.viewportHeight??null,
+          viewport_stable_height:tg?.viewportStableHeight??null,
+          is_active:tg?.isActive??null,
+          is_expanded:tg?.isExpanded??null,
+          is_fullscreen:tg?.isFullscreen??null,
+          is_orientation_locked:tg?.isOrientationLocked??null,
+          is_closing_confirmation_enabled:tg?.isClosingConfirmationEnabled??null,
+          is_vertical_swipes_enabled:tg?.isVerticalSwipesEnabled??null,
+          safe_area_inset:tg?.safeAreaInset??null,
+          content_safe_area_inset:tg?.contentSafeAreaInset??null
+        },
+        runtime:{
+          language:navigator.language??null,
+          languages:Array.from(navigator.languages||[]),
+          time_zone:Intl.DateTimeFormat().resolvedOptions().timeZone??null,
+          user_agent:navigator.userAgent??null,
+          screen_width:screenInfo.width??null,
+          screen_height:screenInfo.height??null,
+          device_pixel_ratio:window.devicePixelRatio??null
+        }
+      };
+    }
+
     async function api(query,options={}){
-      const response=await fetch(BASE+query,{...options,headers:{"Content-Type":"application/json","x-telegram-init-data":tg?.initData||"",...(options.headers||{})}});
+      const response=await fetch(BASE+query,{...options,headers:{
+        "Content-Type":"application/json",
+        "x-telegram-init-data":tg?.initData||"",
+        "x-telegram-client-context":JSON.stringify(clientContext()),
+        ...(options.headers||{})
+      }});
       const body=await response.json().catch(()=>({}));
       if(!response.ok)throw new Error(body.error||"Не удалось выполнить запрос");
       return body;
