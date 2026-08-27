@@ -6,149 +6,45 @@
   <title>ON · Anastasiia Buyer</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root{--bg:var(--tg-theme-bg-color,#f6f6f1);--text:var(--tg-theme-text-color,#171814);--muted:var(--tg-theme-hint-color,#72766d);--card:var(--tg-theme-secondary-bg-color,#fff);--button:var(--tg-theme-button-color,#171814);--button-text:var(--tg-theme-button-text-color,#fff);--line:#d8dcd2}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{padding:24px 16px 18px}.eyebrow{font-size:10px;letter-spacing:.16em;color:var(--muted)}h1{margin:6px 0;font-size:28px;line-height:1}.intro{margin:0;color:var(--muted)}main{padding:0 12px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.card{border:0;border-radius:16px;background:var(--card);padding:0;overflow:hidden;text-align:left;color:inherit}.card img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#fff}.copy{padding:11px}.brand{font-size:10px;letter-spacing:.1em;color:var(--muted)}h2{font-size:13px;line-height:1.25;margin:4px 0 7px}.price{font-size:17px;font-weight:750}.tag{display:inline-block;margin-top:7px;padding:3px 7px;border-radius:999px;background:#edf0e8;font-size:10px;color:#596055}.empty{grid-column:1/-1;padding:44px 14px;text-align:center;color:var(--muted)}dialog{border:0;border-radius:20px;padding:0;width:min(94vw,520px);max-height:90vh;color:var(--text);background:var(--card)}dialog::backdrop{background:#0008}.detail{padding:17px}.gallery{display:grid;grid-auto-flow:column;grid-auto-columns:88%;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-bottom:14px}.gallery img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border-radius:13px;scroll-snap-align:start}.notice{padding:10px;border-radius:11px;background:#edf0e8;color:#596055;font-size:12px}.sizes{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.size{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--card);color:var(--text)}.size[disabled]{opacity:.4;text-decoration:line-through}.size.selected{background:var(--button);color:var(--button-text)}.order,.close{width:100%;border:0;border-radius:12px;padding:13px;font-weight:700}.order{background:var(--button);color:var(--button-text)}.order:disabled{opacity:.45}.close{background:transparent;color:var(--muted);margin-top:4px}.error{color:#a22}main.single-product{display:block;padding:0 12px 28px}.single-product .detail{max-width:560px;margin:0 auto;background:var(--card);border-radius:18px}.single-product h2{font-size:23px}.single-product .close{display:none}@media(min-width:640px){main:not(.single-product){grid-template-columns:repeat(3,minmax(0,1fr))}.gallery{grid-auto-columns:70%}}
+    :root{--bg:var(--tg-theme-bg-color,#f4f4ef);--text:var(--tg-theme-text-color,#171814);--muted:var(--tg-theme-hint-color,#6f746a);--card:var(--tg-theme-secondary-bg-color,#fff);--button:var(--tg-theme-button-color,#151a16);--button-text:var(--tg-theme-button-text-color,#fff);--line:#d8dcd2;--ok:#27623b;--warn:#72580b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}header{padding:20px 16px 14px;position:sticky;top:0;z-index:3;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(18px)}.eyebrow{font-size:10px;letter-spacing:.15em;color:var(--muted)}h1{margin:5px 0;font-size:27px;line-height:1.05}.intro{margin:0;color:var(--muted)}.filters{padding:0 12px 12px;display:grid;gap:9px;position:sticky;top:96px;z-index:2;background:var(--bg)}.search-row{display:grid;grid-template-columns:1fr auto;gap:8px}.search-row input,.filter-select{min-height:44px;border:1px solid var(--line);border-radius:13px;background:var(--card);color:var(--text);padding:0 12px;font-size:16px}.search-row button{border:0;border-radius:13px;padding:0 15px;background:var(--button);color:var(--button-text);font-weight:700}.gender{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.gender button{min-height:42px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text)}.gender button.active{background:var(--button);color:var(--button-text)}.selects{display:grid;grid-template-columns:1fr 1fr;gap:8px}main{padding:0 12px 26px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.card{border:0;border-radius:16px;background:var(--card);padding:0;overflow:hidden;text-align:left;color:inherit;min-width:0}.card img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#fff}.copy{padding:11px}.brand{font-size:10px;letter-spacing:.1em;color:var(--muted)}h2{font-size:13px;line-height:1.25;margin:4px 0 7px}.price{font-size:17px;font-weight:750}.tag{display:inline-block;margin-top:7px;padding:3px 7px;border-radius:999px;background:#edf0e8;font-size:10px;color:#596055}.empty{grid-column:1/-1;padding:44px 14px;text-align:center;color:var(--muted)}.more{grid-column:1/-1;min-height:46px;border:1px solid var(--line);border-radius:13px;background:var(--card);color:var(--text);font-weight:700}dialog{border:0;border-radius:20px;padding:0;width:min(94vw,560px);max-height:92vh;color:var(--text);background:var(--card)}dialog::backdrop{background:#0008}.detail{padding:17px}.gallery{display:grid;grid-auto-flow:column;grid-auto-columns:88%;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-bottom:14px}.gallery img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:13px;scroll-snap-align:start}.notice,.status{padding:11px;border-radius:11px;background:#edf0e8;color:#596055;font-size:12px}.status{display:none;margin:10px 0}.status.visible{display:block}.status.available{background:#e6f3e8;color:var(--ok)}.status.unavailable,.status.failed{background:#f5edda;color:var(--warn)}.sizes{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.size{border:1px solid var(--line);border-radius:10px;min-width:48px;min-height:44px;padding:9px 11px;background:var(--card);color:var(--text)}.size.selected{background:var(--button);color:var(--button-text)}.contact,.explore,.close{width:100%;border:0;border-radius:12px;min-height:46px;padding:12px;font-weight:700}.contact{background:var(--button);color:var(--button-text)}.explore{background:#e8ebe4;color:var(--text);margin-top:8px}.close{background:transparent;color:var(--muted);margin-top:4px}.error{color:#a22}main.single-product{display:block;padding:0 12px 28px}.single-product .detail{max-width:560px;margin:0 auto;background:var(--card);border-radius:18px}.single-product h2{font-size:23px}.single-product .close{display:none}.hidden{display:none!important}@media(min-width:640px){main:not(.single-product){grid-template-columns:repeat(3,minmax(0,1fr))}.gallery{grid-auto-columns:70%}.filters{grid-template-columns:1.2fr 1fr 1fr;align-items:center}.gender{grid-column:1}.search-row{grid-column:2/4;grid-row:1}.selects{grid-column:2/4;grid-row:2}}
   </style>
 </head>
 <body>
-  <header>
-    <div class="eyebrow">ANASTASIIA BUYER · ON RUNNING</div>
-    <h1 id="title">Кроссовки под заказ</h1>
-    <p class="intro" id="intro">Выберите модель и размер. Наличие и доставка подтверждаются лично перед оплатой.</p>
-  </header>
+  <header><div class="eyebrow">ANASTASIIA BUYER · ON RUNNING</div><h1 id="title">Кроссовки под заказ</h1><p class="intro" id="intro">Все размеры можно запросить. Наличие проверяется на официальном сайте ON.</p></header>
+  <section class="filters" id="filters">
+    <div class="search-row"><input id="search" type="search" placeholder="Модель или цвет" autocomplete="off"><button id="searchButton">Найти</button></div>
+    <div class="gender" id="gender"><button class="active" data-gender="">Все</button><button data-gender="men">Мужские</button><button data-gender="women">Женские</button></div>
+    <div class="selects"><select class="filter-select" id="model"><option value="">Все модели</option></select><select class="filter-select" id="color"><option value="">Все цвета</option></select></div>
+  </section>
   <main id="catalog"><div class="empty">Загружаем каталог…</div></main>
   <dialog id="detail"></dialog>
   <script>
-    const tg=window.Telegram?.WebApp;
-    tg?.ready();
-    tg?.expand();
+    const tg=window.Telegram?.WebApp;tg?.ready();tg?.expand();
     const BASE="https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront";
-    const root=document.getElementById("catalog");
-    const dialog=document.getElementById("detail");
-    const title=document.getElementById("title");
-    const intro=document.getElementById("intro");
-    const pageSessionId=crypto.randomUUID?.()||String(Date.now())+"-"+Math.random().toString(16).slice(2);
+    const root=document.getElementById("catalog"),dialog=document.getElementById("detail"),filters=document.getElementById("filters"),title=document.getElementById("title"),intro=document.getElementById("intro");
+    const search=document.getElementById("search"),model=document.getElementById("model"),color=document.getElementById("color"),gender=document.getElementById("gender");
+    const pageSessionId=crypto.randomUUID?.()||String(Date.now())+"-"+Math.random().toString(16).slice(2);let exploreMode=false,activeGender="",offset=0,total=0,items=[],facetsLoaded=false;
     const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-
-    function clientContext(){
-      const screenInfo=window.screen||{};
-      return {
-        schema_version:"telegram-webapp-client-v1",
-        captured_at:new Date().toISOString(),
-        page_session_id:pageSessionId,
-        trust:"client_reported",
-        telegram_web_app:{
-          platform:tg?.platform??null,
-          version:tg?.version??null,
-          color_scheme:tg?.colorScheme??null,
-          theme_params:tg?.themeParams??null,
-          viewport_height:tg?.viewportHeight??null,
-          viewport_stable_height:tg?.viewportStableHeight??null,
-          is_active:tg?.isActive??null,
-          is_expanded:tg?.isExpanded??null,
-          is_fullscreen:tg?.isFullscreen??null,
-          is_orientation_locked:tg?.isOrientationLocked??null,
-          is_closing_confirmation_enabled:tg?.isClosingConfirmationEnabled??null,
-          is_vertical_swipes_enabled:tg?.isVerticalSwipesEnabled??null,
-          safe_area_inset:tg?.safeAreaInset??null,
-          content_safe_area_inset:tg?.contentSafeAreaInset??null
-        },
-        runtime:{
-          language:navigator.language??null,
-          languages:Array.from(navigator.languages||[]),
-          time_zone:Intl.DateTimeFormat().resolvedOptions().timeZone??null,
-          user_agent:navigator.userAgent??null,
-          screen_width:screenInfo.width??null,
-          screen_height:screenInfo.height??null,
-          device_pixel_ratio:window.devicePixelRatio??null
-        }
-      };
-    }
-
-    async function api(query,options={}){
-      const response=await fetch(BASE+query,{...options,headers:{
-        "Content-Type":"application/json",
-        "x-telegram-init-data":tg?.initData||"",
-        "x-telegram-client-context":JSON.stringify(clientContext()),
-        ...(options.headers||{})
-      }});
-      const body=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(body.error||"Не удалось выполнить запрос");
-      return body;
-    }
-
-    function requestedProductId(){
-      const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(location.search).get("tgWebAppStartParam")||"");
-      const match=/^product_([1-9][0-9]*)$/.exec(raw);
-      const id=match?Number(match[1]):NaN;
-      return Number.isSafeInteger(id)?id:null;
-    }
-
-    function card(product){
-      return '<button class="card" data-id="'+product.id+'"><img loading="lazy" src="'+esc(product.imageUrl)+'" alt=""><div class="copy"><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">€ '+Number(product.priceEur).toLocaleString("ru-RU")+'</div><span class="tag">Под заказ</span></div></button>';
-    }
-
-    function productMarkup(product){
-      const images=[...(product.imageUrls||[]),product.imageUrl].filter((url,index,all)=>url&&all.indexOf(url)===index);
-      const gallery=images.map(url=>'<img src="'+esc(url)+'" alt="'+esc(product.name)+'">').join("");
-      const sizes=(product.sizes||[]).map(size=>'<button class="size" data-size="'+esc(size.value)+'" '+(size.orderable?'':'disabled')+'>'+esc(size.value)+'</button>').join("");
-      return '<div class="detail" data-product-id="'+product.id+'"><div class="gallery">'+gallery+'</div><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">€ '+Number(product.priceEur).toLocaleString("ru-RU")+'</div><p>'+esc(product.description||"")+'</p><div class="notice">Товар приобретается после вашего запроса. Срок и доставка подтверждаются отдельно.</div><div class="sizes">'+sizes+'</div><button class="order" '+(sizes?'disabled':'')+'>'+(sizes?'Выберите размер':'Отправить запрос')+'</button><button class="close">Закрыть</button></div>';
-    }
-
-    function activateProduct(container,product,standalone){
-      let selected=null;
-      const orderButton=container.querySelector(".order");
-      container.querySelectorAll(".size:not([disabled])").forEach(element=>element.onclick=()=>{
-        container.querySelectorAll(".size").forEach(candidate=>candidate.classList.remove("selected"));
-        element.classList.add("selected");
-        selected=element.dataset.size;
-        orderButton.disabled=false;
-        orderButton.textContent="Заказать размер "+selected;
-      });
-      orderButton.onclick=()=>requestProduct(product.id,selected,standalone);
-      container.querySelector(".close").onclick=()=>dialog.close();
-    }
-
-    async function openProduct(id){
-      try{
-        const product=await api("?action=product&id="+encodeURIComponent(id));
-        dialog.innerHTML=productMarkup(product);
-        activateProduct(dialog,product,false);
-        dialog.showModal();
-      }catch(error){tg?.showAlert(error.message)}
-    }
-
-    async function openSingleProduct(id){
-      const product=await api("?action=product&id="+encodeURIComponent(id));
-      title.textContent="Проверьте размер";
-      intro.textContent="Доступные размеры только для выбранной модели.";
-      root.className="single-product";
-      root.innerHTML=productMarkup(product);
-      activateProduct(root,product,true);
-    }
-
-    async function requestProduct(productId,size,standalone){
-      try{
-        await api("?action=request",{method:"POST",body:JSON.stringify({productId,size})});
-        tg?.showAlert("Запрос отправлен. Анастасия подтвердит наличие, срок и доставку.");
-        if(!standalone)dialog.close();
-      }catch(error){tg?.showAlert(error.message)}
-    }
-
-    async function load(){
-      try{
-        if(!tg?.initData)throw new Error("Откройте каталог через кнопку в Telegram");
-        const requested=requestedProductId();
-        if(requested!==null){
-          await openSingleProduct(requested);
-          return;
-        }
-        const data=await api("?action=catalog&brand=On&limit=200");
-        root.innerHTML=data.items.length?data.items.map(card).join(""):'<div class="empty">Сейчас нет доступных моделей.</div>';
-        root.querySelectorAll("[data-id]").forEach(element=>element.onclick=()=>openProduct(element.dataset.id));
-      }catch(error){root.innerHTML='<div class="empty error">'+esc(error.message)+'</div>'}
-    }
-
-    load();
+    const eventId=()=>crypto.randomUUID();
+    function clientContext(){const s=window.screen||{};return{schema_version:"telegram-webapp-client-v1",captured_at:new Date().toISOString(),page_session_id:pageSessionId,trust:"client_reported",telegram_web_app:{platform:tg?.platform??null,version:tg?.version??null,color_scheme:tg?.colorScheme??null,theme_params:tg?.themeParams??null,viewport_height:tg?.viewportHeight??null,viewport_stable_height:tg?.viewportStableHeight??null,is_active:tg?.isActive??null,is_expanded:tg?.isExpanded??null,is_fullscreen:tg?.isFullscreen??null,is_orientation_locked:tg?.isOrientationLocked??null,is_closing_confirmation_enabled:tg?.isClosingConfirmationEnabled??null,is_vertical_swipes_enabled:tg?.isVerticalSwipesEnabled??null,safe_area_inset:tg?.safeAreaInset??null,content_safe_area_inset:tg?.contentSafeAreaInset??null},runtime:{language:navigator.language??null,languages:Array.from(navigator.languages||[]),time_zone:Intl.DateTimeFormat().resolvedOptions().timeZone??null,user_agent:navigator.userAgent??null,screen_width:s.width??null,screen_height:s.height??null,device_pixel_ratio:window.devicePixelRatio??null}}}
+    async function api(query,options={}){const response=await fetch(BASE+query,{...options,headers:{"Content-Type":"application/json","x-telegram-init-data":tg?.initData||"","x-telegram-client-context":JSON.stringify(clientContext()),...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error||"Не удалось выполнить запрос");return body}
+    function track(name,productId=null,details={}){return api("?action=interaction",{method:"POST",body:JSON.stringify({interactionName:name,productId,eventId:eventId(),details})}).catch(()=>null)}
+    function requestedProductId(){const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(location.search).get("tgWebAppStartParam")||"");const match=/^product_([1-9][0-9]*)$/.exec(raw);const id=match?Number(match[1]):NaN;return Number.isSafeInteger(id)?id:null}
+    function card(p){return `<button class="card" data-id="${p.id}"><img loading="lazy" src="${esc(p.imageUrl)}" alt="${esc(p.name)}"><div class="copy"><div class="brand">${esc(p.gender==="women"?"ЖЕНСКИЕ":"МУЖСКИЕ")}</div><h2>${esc(p.name)}</h2><div class="price">€ ${Number(p.priceEur).toLocaleString("ru-RU")}</div><span class="tag">Под заказ</span></div></button>`}
+    function productMarkup(p){const images=[...(p.imageUrls||[]),p.imageUrl].filter((url,index,all)=>url&&all.indexOf(url)===index);const gallery=images.map((url,index)=>`<img data-image-index="${index}" src="${esc(url)}" alt="${esc(p.name)}">`).join("");const sizes=(p.sizes||[]).map(size=>`<button class="size" data-size="${esc(size.value)}">${esc(size.value)}</button>`).join("");return `<div class="detail" data-product-id="${p.id}"><div class="gallery">${gallery}</div><div class="brand">${esc(p.brand)} · ${esc(p.color||"")}</div><h2>${esc(p.name)}</h2><div class="price">€ ${Number(p.priceEur).toLocaleString("ru-RU")}</div><p>${esc(p.description||"")}</p><div class="notice">Выберите размер — мы сразу проверим его на официальном сайте ON. Доставка рассчитывается отдельно.</div><div class="sizes">${sizes}</div><div class="status" role="status"></div><button class="contact">Написать Анастасии</button><button class="explore">Найти другую модель</button><button class="close">Закрыть</button></div>`}
+    function watchGallery(container,p){const seen=new Set();container.querySelectorAll("[data-image-index]").forEach(image=>{new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting&&!seen.has(image.dataset.imageIndex)){seen.add(image.dataset.imageIndex);track("gallery_image_viewed",p.id,{image_index:Number(image.dataset.imageIndex),image_count:(p.imageUrls||[]).length})}}),{root:container.querySelector(".gallery"),threshold:.8}).observe(image)})}
+    function contact(p,size){track("contact_anastasia_opened",p.id,{size:size||null});const text=encodeURIComponent(`Здравствуйте! Хочу заказать ON ${p.name}${size?`, размер ${size}`:""}.`);tg?.openTelegramLink?tg.openTelegramLink(`https://t.me/buyer_rome?text=${text}`):location.href=`https://t.me/buyer_rome?text=${text}`}
+    async function chooseSize(container,p,size){container.querySelectorAll(".size").forEach(x=>x.classList.toggle("selected",x.dataset.size===size));const status=container.querySelector(".status");status.className="status visible";status.textContent=`Проверяем размер ${size} на официальном сайте ON…`;try{const check=await api(`?action=size-interest${exploreMode?"&explore=1":""}`,{method:"POST",body:JSON.stringify({productId:p.id,size,eventId:eventId()})});pollStatus(status,check.checkId,size)}catch(error){status.className="status visible failed";status.textContent=error.message}}
+    async function pollStatus(node,checkId,size){for(let attempt=0;attempt<15;attempt++){await new Promise(resolve=>setTimeout(resolve,2000));try{const result=await api(`?action=size-status&checkId=${encodeURIComponent(checkId)}`);if(["available","unavailable","failed"].includes(result.status)){node.className=`status visible ${result.status}`;node.textContent=result.message;return}}catch{}}node.textContent=`Проверка размера ${size} продолжается. Результат появится в CRM, а при наличии бот отправит сообщение.`}
+    function activateProduct(container,p){let selected=null;container.querySelectorAll(".size").forEach(el=>el.onclick=()=>{selected=el.dataset.size;chooseSize(container,p,selected)});container.querySelector(".contact").onclick=()=>contact(p,selected);container.querySelector(".explore").onclick=()=>openCatalogFromProduct(p.id);container.querySelector(".close").onclick=()=>dialog.close();watchGallery(container,p)}
+    async function openProduct(id){try{track("catalog_product_opened",Number(id));const p=await api(`?action=product&id=${encodeURIComponent(id)}&explore=1`);dialog.innerHTML=productMarkup(p);activateProduct(dialog,p);dialog.showModal()}catch(error){tg?.showAlert(error.message)}}
+    async function openSingleProduct(id){const p=await api(`?action=product&id=${encodeURIComponent(id)}`);title.textContent="Фото и размеры";intro.textContent="Выберите размер — наличие проверим автоматически.";filters.classList.add("hidden");root.className="single-product";root.innerHTML=productMarkup(p);activateProduct(root,p)}
+    function filterQuery(){const params=new URLSearchParams({action:"catalog",brand:"On",limit:"20",offset:String(offset),explore:"1"});if(activeGender)params.set("gender",activeGender);if(model.value)params.set("model",model.value);if(color.value)params.set("color",color.value);if(search.value.trim())params.set("q",search.value.trim());return`?${params}`}
+    function fillSelect(select,values,label){const current=select.value;select.innerHTML=`<option value="">${label}</option>`+(values||[]).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");select.value=current}
+    async function loadCatalog(reset=true){if(reset){offset=0;items=[];root.innerHTML='<div class="empty">Загружаем каталог…</div>'}const data=await api(filterQuery());total=data.total;items=items.concat(data.items||[]);offset=items.length;if(!facetsLoaded&&data.facets){fillSelect(model,data.facets.models,"Все модели");fillSelect(color,data.facets.colors,"Все цвета");facetsLoaded=true}root.className="";root.innerHTML=items.length?items.map(card).join(""):'<div class="empty">По этим фильтрам моделей нет.</div>';if(items.length<total)root.insertAdjacentHTML("beforeend",'<button class="more">Показать ещё</button>');root.querySelectorAll("[data-id]").forEach(el=>el.onclick=()=>openProduct(el.dataset.id));root.querySelector(".more")?.addEventListener("click",()=>loadCatalog(false))}
+    async function openCatalogFromProduct(productId){if(dialog.open)dialog.close();exploreMode=true;filters.classList.remove("hidden");title.textContent="Кроссовки под заказ";intro.textContent="Фильтруйте по полу, модели и цвету.";track("catalog_search_opened",productId);await loadCatalog(true)}
+    gender.querySelectorAll("button").forEach(button=>button.onclick=()=>{gender.querySelectorAll("button").forEach(x=>x.classList.remove("active"));button.classList.add("active");activeGender=button.dataset.gender;track("catalog_filter_changed",null,{filter:"gender",value:activeGender||"all"});loadCatalog(true)});model.onchange=()=>{track("catalog_filter_changed",null,{filter:"model",value:model.value||"all"});loadCatalog(true)};color.onchange=()=>{track("catalog_filter_changed",null,{filter:"color",value:color.value||"all"});loadCatalog(true)};document.getElementById("searchButton").onclick=()=>{track("catalog_search_submitted",null,{query:search.value.trim().slice(0,120)});loadCatalog(true)};search.onkeydown=event=>{if(event.key==="Enter")document.getElementById("searchButton").click()};
+    async function load(){try{if(!tg?.initData)throw new Error("Откройте каталог через кнопку в Telegram");const requested=requestedProductId();if(requested!==null)return openSingleProduct(requested);exploreMode=true;return loadCatalog(true)}catch(error){root.innerHTML=`<div class="empty error">${esc(error.message)}</div>`}}load();
   </script>
 </body>
 </html>
