@@ -6,7 +6,7 @@
   <title>ON · Anastasiia Buyer</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root{--bg:var(--tg-theme-bg-color,#f6f6f1);--text:var(--tg-theme-text-color,#171814);--muted:var(--tg-theme-hint-color,#72766d);--card:var(--tg-theme-secondary-bg-color,#fff);--button:var(--tg-theme-button-color,#171814);--button-text:var(--tg-theme-button-text-color,#fff);--line:#d8dcd2}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{padding:24px 16px 18px}.eyebrow{font-size:10px;letter-spacing:.16em;color:var(--muted)}h1{margin:6px 0;font-size:28px;line-height:1}.intro{margin:0;color:var(--muted)}main{padding:0 12px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.card{border:0;border-radius:16px;background:var(--card);padding:0;overflow:hidden;text-align:left;color:inherit}.card img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#fff}.copy{padding:11px}.brand{font-size:10px;letter-spacing:.1em;color:var(--muted)}h2{font-size:13px;line-height:1.25;margin:4px 0 7px}.price{font-size:17px;font-weight:750}.tag{display:inline-block;margin-top:7px;padding:3px 7px;border-radius:999px;background:#edf0e8;font-size:10px;color:#596055}.empty{grid-column:1/-1;padding:44px 14px;text-align:center;color:var(--muted)}dialog{border:0;border-radius:20px;padding:0;width:min(94vw,520px);max-height:90vh;color:var(--text);background:var(--card)}dialog::backdrop{background:#0008}.detail{padding:17px}.gallery{display:grid;grid-auto-flow:column;grid-auto-columns:88%;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-bottom:14px}.gallery img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border-radius:13px;scroll-snap-align:start}.notice{padding:10px;border-radius:11px;background:#edf0e8;color:#596055;font-size:12px}.sizes{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.size{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--card);color:var(--text)}.size[disabled]{opacity:.4;text-decoration:line-through}.size.selected{background:var(--button);color:var(--button-text)}.order,.close{width:100%;border:0;border-radius:12px;padding:13px;font-weight:700}.order{background:var(--button);color:var(--button-text)}.order:disabled{opacity:.45}.close{background:transparent;color:var(--muted);margin-top:4px}.error{color:#a22}main.single-product{display:block;padding:0 12px 28px}.single-product .detail{max-width:560px;margin:0 auto;background:var(--card);border-radius:18px}.single-product h2{font-size:23px}.single-product .close{display:none}@media(min-width:640px){main:not(.single-product){grid-template-columns:repeat(3,minmax(0,1fr))}.gallery{grid-auto-columns:70%}}
+    :root{--bg:var(--tg-theme-bg-color,#f6f6f1);--text:var(--tg-theme-text-color,#171814);--muted:var(--tg-theme-hint-color,#72766d);--card:var(--tg-theme-secondary-bg-color,#fff);--button:var(--tg-theme-button-color,#171814);--button-text:var(--tg-theme-button-text-color,#fff);--line:#d8dcd2}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{padding:24px 16px 18px}.eyebrow{font-size:10px;letter-spacing:.16em;color:var(--muted)}h1{margin:6px 0;font-size:28px;line-height:1}.intro{margin:0;color:var(--muted)}main{padding:0 12px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.card{border:0;border-radius:16px;background:var(--card);padding:0;overflow:hidden;text-align:left;color:inherit}.card img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#fff}.copy{padding:11px}.brand{font-size:10px;letter-spacing:.1em;color:var(--muted)}h2{font-size:13px;line-height:1.25;margin:4px 0 7px}.price{font-size:17px;font-weight:750}.tag{display:inline-block;margin-top:7px;padding:3px 7px;border-radius:999px;background:#edf0e8;font-size:10px;color:#596055}.empty{grid-column:1/-1;padding:44px 14px;text-align:center;color:var(--muted)}dialog{border:0;border-radius:20px;padding:0;width:min(94vw,520px);max-height:90vh;color:var(--text);background:var(--card)}dialog::backdrop{background:#0008}.detail{padding:17px}.gallery{display:grid;grid-auto-flow:column;grid-auto-columns:88%;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-bottom:14px}.gallery img{width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border-radius:13px;scroll-snap-align:start}.notice{padding:10px;border-radius:11px;background:#edf0e8;color:#596055;font-size:12px}.sizes{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.size{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--card);color:var(--text)}.size[disabled]{opacity:.4;text-decoration:line-through}.size.selected{background:var(--button);color:var(--button-text)}.size-status{min-height:22px;margin:0 0 10px;color:var(--muted);font-size:12px}.size-status.available{color:#247140}.size-status.unavailable,.size-status.failed{color:#963e2d}.order,.contact,.close{width:100%;border:0;border-radius:12px;padding:13px;font-weight:700}.order{background:var(--button);color:var(--button-text)}.order:disabled{opacity:.45}.contact{margin-top:8px;background:#2aabee;color:#fff}.contact[hidden]{display:none}.close{background:transparent;color:var(--muted);margin-top:4px}.error{color:#a22}main.single-product{display:block;padding:0 12px 28px}.single-product .detail{max-width:560px;margin:0 auto;background:var(--card);border-radius:18px}.single-product h2{font-size:23px}.single-product .close{display:none}@media(min-width:640px){main:not(.single-product){grid-template-columns:repeat(3,minmax(0,1fr))}.gallery{grid-auto-columns:70%}}
   </style>
 </head>
 <body>
@@ -26,7 +26,15 @@
     const dialog=document.getElementById("detail");
     const title=document.getElementById("title");
     const intro=document.getElementById("intro");
-    const pageSessionId=crypto.randomUUID?.()||String(Date.now())+"-"+Math.random().toString(16).slice(2);
+    function randomUuid(){
+      if(typeof crypto.randomUUID==="function")return crypto.randomUUID();
+      const bytes=crypto.getRandomValues(new Uint8Array(16));
+      bytes[6]=(bytes[6]&15)|64;
+      bytes[8]=(bytes[8]&63)|128;
+      const hex=Array.from(bytes,byte=>byte.toString(16).padStart(2,"0")).join("");
+      return hex.slice(0,8)+"-"+hex.slice(8,12)+"-"+hex.slice(12,16)+"-"+hex.slice(16,20)+"-"+hex.slice(20);
+    }
+    const pageSessionId=randomUuid();
     const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
     function clientContext(){
@@ -83,28 +91,44 @@
       return Number.isSafeInteger(id)?id:null;
     }
 
+    function customerPrice(product){
+      const amount=Number(product.priceAmount);
+      const currency=String(product.priceCurrency||"").toUpperCase();
+      if(!Number.isFinite(amount)||amount<=0||currency!=="RUB")return "Цена уточняется";
+      return new Intl.NumberFormat("ru-RU",{style:"currency",currency:"RUB",maximumFractionDigits:0}).format(amount);
+    }
+
+    const eventId=randomUuid;
+    const delay=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
+
     function card(product){
-      return '<button class="card" data-id="'+product.id+'"><img loading="lazy" src="'+esc(product.imageUrl)+'" alt=""><div class="copy"><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">€ '+Number(product.priceEur).toLocaleString("ru-RU")+'</div><span class="tag">Под заказ</span></div></button>';
+      return '<button class="card" data-id="'+product.id+'"><img loading="lazy" src="'+esc(product.imageUrl)+'" alt=""><div class="copy"><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">'+esc(customerPrice(product))+'</div><span class="tag">Под заказ</span></div></button>';
     }
 
     function productMarkup(product){
       const images=[...(product.imageUrls||[]),product.imageUrl].filter((url,index,all)=>url&&all.indexOf(url)===index);
       const gallery=images.map(url=>'<img src="'+esc(url)+'" alt="'+esc(product.name)+'">').join("");
-      const sizes=(product.sizes||[]).map(size=>'<button class="size" data-size="'+esc(size.value)+'" '+(size.orderable?'':'disabled')+'>'+esc(size.value)+'</button>').join("");
-      return '<div class="detail" data-product-id="'+product.id+'"><div class="gallery">'+gallery+'</div><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">€ '+Number(product.priceEur).toLocaleString("ru-RU")+'</div><p>'+esc(product.description||"")+'</p><div class="notice">Товар приобретается после вашего запроса. Срок и доставка подтверждаются отдельно.</div><div class="sizes">'+sizes+'</div><button class="order" '+(sizes?'disabled':'')+'>'+(sizes?'Выберите размер':'Отправить запрос')+'</button><button class="close">Закрыть</button></div>';
+      const sizes=(product.sizes||[]).map(size=>'<button class="size" data-size="'+esc(size.value)+'" '+(size.selectable===true?'':'disabled')+'>'+esc(size.value)+'</button>').join("");
+      return '<div class="detail" data-product-id="'+product.id+'"><div class="gallery">'+gallery+'</div><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">'+esc(customerPrice(product))+'</div><p>'+esc(product.description||"")+'</p><div class="notice">Выберите интересующий размер. Мы проверим фактическое наличие на официальном сайте ON.</div><div class="sizes">'+sizes+'</div><p class="size-status" aria-live="polite"></p><button class="order" disabled>'+(sizes?'Выберите размер':'Размеры уточняются')+'</button><button class="contact" hidden>Написать Анастасии</button><button class="close">Закрыть</button></div>';
     }
 
     function activateProduct(container,product,standalone){
       let selected=null;
       const orderButton=container.querySelector(".order");
+      const status=container.querySelector(".size-status");
+      const contactButton=container.querySelector(".contact");
       container.querySelectorAll(".size:not([disabled])").forEach(element=>element.onclick=()=>{
         container.querySelectorAll(".size").forEach(candidate=>candidate.classList.remove("selected"));
         element.classList.add("selected");
         selected=element.dataset.size;
         orderButton.disabled=false;
-        orderButton.textContent="Заказать размер "+selected;
+        orderButton.textContent="Проверить размер "+selected;
+        status.textContent="";
+        status.className="size-status";
+        contactButton.hidden=true;
       });
-      orderButton.onclick=()=>requestProduct(product.id,selected,standalone);
+      orderButton.onclick=()=>requestProduct(product,selected,container,standalone);
+      contactButton.onclick=()=>contactAnastasia(product,selected);
       container.querySelector(".close").onclick=()=>dialog.close();
     }
 
@@ -126,12 +150,44 @@
       activateProduct(root,product,true);
     }
 
-    async function requestProduct(productId,size,standalone){
+    async function requestProduct(product,size,container,standalone){
+      if(!size)return;
+      const orderButton=container.querySelector(".order");
+      const status=container.querySelector(".size-status");
+      const contactButton=container.querySelector(".contact");
       try{
-        await api("?action=request",{method:"POST",body:JSON.stringify({productId,size})});
-        tg?.showAlert("Запрос отправлен. Анастасия подтвердит наличие, срок и доставку.");
-        if(!standalone)dialog.close();
-      }catch(error){tg?.showAlert(error.message)}
+        orderButton.disabled=true;
+        status.className="size-status";
+        status.textContent="Проверяем наличие на официальном сайте ON…";
+        const queued=await api("?action=size-interest",{method:"POST",body:JSON.stringify({productId:product.id,size,eventId:eventId()})});
+        let result=queued;
+        for(let attempt=0;attempt<20&&!['available','unavailable','unknown','failed'].includes(result.status);attempt+=1){
+          await delay(1500);
+          result=await api("?action=size-status&checkId="+encodeURIComponent(queued.checkId));
+        }
+        status.textContent=result.message||"Запрос зарегистрирован. Анастасия проверит наличие.";
+        status.className="size-status "+(result.status||"");
+        contactButton.hidden=!['available','unknown','failed'].includes(result.status);
+        orderButton.disabled=false;
+        orderButton.textContent="Проверить размер "+size;
+        if(result.status==='available')tg?.HapticFeedback?.notificationOccurred?.("success");
+        if(!standalone&&result.status==='available')tg?.showAlert(result.message);
+      }catch(error){
+        orderButton.disabled=false;
+        status.className="size-status failed";
+        status.textContent=error.message;
+      }
+    }
+
+    async function contactAnastasia(product,size){
+      try{
+        await api("?action=interaction",{method:"POST",body:JSON.stringify({
+          productId:product.id,interactionName:"contact_anastasia_opened",eventId:eventId(),details:{size}
+        })});
+      }catch{}
+      const reference=String(product.reference||product.id);
+      const url="https://t.me/buyer_rome?text="+encodeURIComponent("ON "+reference+" · размер "+size);
+      if(tg?.openTelegramLink)tg.openTelegramLink(url);else location.href=url;
     }
 
     async function load(){
