@@ -47,6 +47,17 @@ test("il contatto Anastasia viene tracciato prima di aprire buyer_rome", () => {
   const opened = source.indexOf("https://t.me/buyer_rome?text=");
   assert.ok(tracked > 0 && opened > tracked);
   assert.match(source, /product\.reference\|\|product\.id/);
+  assert.match(source, /Здравствуйте, Анастасия!/);
+  assert.match(source, /Размер: /);
+  assert.match(source, /Артикул: /);
+  assert.match(source, /Уточнить заказ у Анастасии/);
+});
+
+test("i messaggi di stato sono professionali e contestuali alla misura", () => {
+  assert.match(source, /Проверяем размер \"\+size\+\"/);
+  assert.match(source, /Обычно это занимает несколько секунд/);
+  assert.match(source, /Запрос сохранён\. Напишите Анастасии/);
+  assert.doesNotMatch(source, /ON \"\+reference\+\" · размер/);
 });
 
 test("identificativi sessione ed evento hanno fallback UUID v4", () => {

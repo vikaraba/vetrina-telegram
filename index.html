@@ -109,7 +109,7 @@
       const images=[...(product.imageUrls||[]),product.imageUrl].filter((url,index,all)=>url&&all.indexOf(url)===index);
       const gallery=images.map(url=>'<img src="'+esc(url)+'" alt="'+esc(product.name)+'">').join("");
       const sizes=(product.sizes||[]).map(size=>'<button class="size" data-size="'+esc(size.value)+'" '+(size.selectable===true?'':'disabled')+'>'+esc(size.value)+'</button>').join("");
-      return '<div class="detail" data-product-id="'+product.id+'"><div class="gallery">'+gallery+'</div><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">'+esc(customerPrice(product))+'</div><p>'+esc(product.description||"")+'</p><div class="notice">Выберите интересующий размер. Мы проверим фактическое наличие на официальном сайте ON.</div><div class="sizes">'+sizes+'</div><p class="size-status" aria-live="polite"></p><button class="order" disabled>'+(sizes?'Выберите размер':'Размеры уточняются')+'</button><button class="contact" hidden>Написать Анастасии</button><button class="close">Закрыть</button></div>';
+      return '<div class="detail" data-product-id="'+product.id+'"><div class="gallery">'+gallery+'</div><div class="brand">'+esc(product.brand)+'</div><h2>'+esc(product.name)+'</h2><div class="price">'+esc(customerPrice(product))+'</div><p>'+esc(product.description||"")+'</p><div class="notice">Выберите интересующий размер. Мы проверим фактическое наличие на официальном сайте ON.</div><div class="sizes">'+sizes+'</div><p class="size-status" aria-live="polite"></p><button class="order" disabled>'+(sizes?'Выберите размер':'Размеры уточняются')+'</button><button class="contact" hidden>Уточнить заказ у Анастасии</button><button class="close">Закрыть</button></div>';
     }
 
     function activateProduct(container,product,standalone){
@@ -158,14 +158,14 @@
       try{
         orderButton.disabled=true;
         status.className="size-status";
-        status.textContent="Проверяем наличие на официальном сайте ON…";
+        status.textContent="Проверяем размер "+size+" на официальном сайте ON. Обычно это занимает несколько секунд.";
         const queued=await api("?action=size-interest",{method:"POST",body:JSON.stringify({productId:product.id,size,eventId:eventId()})});
         let result=queued;
         for(let attempt=0;attempt<20&&!['available','unavailable','unknown','failed'].includes(result.status);attempt+=1){
           await delay(1500);
           result=await api("?action=size-status&checkId="+encodeURIComponent(queued.checkId));
         }
-        status.textContent=result.message||"Запрос зарегистрирован. Анастасия проверит наличие.";
+        status.textContent=result.message||"Запрос сохранён. Напишите Анастасии, чтобы проверить размер вручную.";
         status.className="size-status "+(result.status||"");
         contactButton.hidden=!['available','unknown','failed'].includes(result.status);
         orderButton.disabled=false;
@@ -186,7 +186,8 @@
         })});
       }catch{}
       const reference=String(product.reference||product.id);
-      const url="https://t.me/buyer_rome?text="+encodeURIComponent("ON "+reference+" · размер "+size);
+      const message="Здравствуйте, Анастасия!\nХочу уточнить заказ модели "+String(product.brand||"ON")+" — "+String(product.name||"")+".\nРазмер: "+size+"\nАртикул: "+reference;
+      const url="https://t.me/buyer_rome?text="+encodeURIComponent(message);
       if(tg?.openTelegramLink)tg.openTelegramLink(url);else location.href=url;
     }
 
