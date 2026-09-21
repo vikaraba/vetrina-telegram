@@ -13,7 +13,7 @@ test("il deep link accetta soltanto product_ID", () => {
 test("il prodotto diretto viene caricato prima e senza catalogo", () => {
   const requested = source.indexOf("const requested=requestedProductId()");
   const single = source.indexOf("await openSingleProduct(requested)", requested);
-  const catalog = source.indexOf('api("?action=catalog&brand=On&limit=200")', requested);
+  const catalog = source.indexOf("await loadCatalog(false)", requested);
   assert.ok(requested > 0 && single > requested && catalog > single);
   assert.match(source.slice(single, catalog), /return;/);
 });
@@ -21,7 +21,9 @@ test("il prodotto diretto viene caricato prima e senza catalogo", () => {
 test("la modalita singola mostra galleria e taglie del solo modello", () => {
   assert.match(source, /product\.imageUrls/);
   assert.match(source, /root\.className="single-product"/);
-  assert.match(source, /Доступные размеры только для выбранной модели/);
+  assert.match(source, /Все официальные фотографии выбранной модели/);
+  assert.match(source, /Найти другой товар/);
+  assert.match(source, /\?action=catalog&limit=100/);
 });
 
 test("prezzo cliente fail-closed esclusivamente in rubli", () => {
@@ -50,7 +52,17 @@ test("il contatto Anastasia viene tracciato prima di aprire buyer_rome", () => {
   assert.match(source, /Здравствуйте, Анастасия!/);
   assert.match(source, /Размер: /);
   assert.match(source, /Артикул: /);
-  assert.match(source, /Уточнить заказ у Анастасии/);
+  assert.match(source, /Написать Анастасии/);
+});
+
+test("catalogo multibrand e zoom professionale restano disponibili dal prodotto",()=>{
+  assert.doesNotMatch(source,/brand=On/);
+  assert.match(source,/activeBrand="Все"/);
+  assert.match(source,/Бренд, модель или артикул/);
+  assert.match(source,/data-zoom/);
+  assert.match(source,/Щипок или двойное касание/);
+  assert.match(source,/pointermove/);
+  assert.match(source,/explore=1/);
 });
 
 test("i messaggi di stato sono professionali e contestuali alla misura", () => {
