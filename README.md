@@ -78,6 +78,13 @@ Porta43135, bind127.0.0.1; CSP blocca API esterne. Il trasporto/SDK di test è
 iniettato solo da quel server, escluso da Pages. Non equivale a una verifica
 autenticata in Telegram o su iPhone fisico.
 
+Per collaudare un build congelato, impostare `MINIAPP_UAT_BUILD` alla directory
+dei sei asset e `MINIAPP_UAT_PORT` a una porta locale libera. Le query locali
+`catalog=empty|error|retry`, `detail=error`, `unauthenticated=1`,
+`outcome=available|unavailable|unknown|failed|queued` e `theme=dark` coprono gli
+stati limite. Il log visibile e il pulsante Telegram Back simulato consentono
+di verificare richieste e navigazione; i contatti restano sempre simulati.
+
 Prima del merge: gate e UAT della revisione finale, main ancora sulla base attesa.
 Dopo: una sola build Pages sull'esatto SHA, confronto hash dei sei asset live,
 controlli di accesso, release record GitHub con rollback al precedente SHA.

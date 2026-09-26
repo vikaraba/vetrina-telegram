@@ -1,7 +1,11 @@
 // Local-only contract UAT. Neither this server nor its injected transport is a Pages asset.
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
-const root=new URL('../',import.meta.url);
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+const root=process.env.MINIAPP_UAT_BUILD?pathToFileURL(resolve(process.env.MINIAPP_UAT_BUILD)+'/'):new URL('../',import.meta.url);
+const port=Number(process.env.MINIAPP_UAT_PORT||43135);
+if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid local UAT port');
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
 const raw=JSON.parse(await readFile(fixture,'utf8'));
@@ -9,21 +13,30 @@ const products=raw.map(({id,name,brand,category,model,color,gender,reference,sou
 const setup=`
 const originalFetch=window.fetch.bind(window);
 const params=new URLSearchParams(location.search);
-const data=await originalFetch('/__qa/data').then(r=>r.json());
+let data=await originalFetch('/__qa/data').then(r=>r.json());
+if(params.get('catalog')==='empty')data=[];
+let catalogAttempts=0,telegramBack=()=>{};
+const log=document.createElement('pre');log.id='qa-log';log.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font:11px monospace;padding:12px';document.body.append(log);
+const record=value=>{log.textContent+=JSON.stringify(value)+String.fromCharCode(10);};
+const back=document.createElement('button');back.id='qa-back';back.textContent='Telegram Back · UAT';back.hidden=true;back.style.cssText='min-height:44px';back.onclick=()=>telegramBack();document.body.append(back);
 const signed=params.get('tgWebAppStartParam')||'';
-window.Telegram={WebApp:{initData:'LOCAL_CONTRACT_FIXTURE_NOT_A_SIGNATURE',initDataUnsafe:{start_param:signed},colorScheme:params.get('theme')||'light',ready(){},expand(){},BackButton:{onClick(){},show(){},hide(){}},onEvent(){},openTelegramLink(url){document.getElementById('qa-status').textContent='LOCAL CONTACT: '+decodeURIComponent(url);}}};
-const status=document.createElement('output');status.id='qa-status';status.textContent='LOCAL CONTRACT UAT · no external requests/messages';status.style.cssText='display:block;font:12px monospace;padding:12px;background:#eee;color:#111';document.body.append(status);
+window.Telegram={WebApp:{initData:params.has('unauthenticated')?'':'LOCAL_CONTRACT_FIXTURE_NOT_A_SIGNATURE',initDataUnsafe:{start_param:signed},colorScheme:params.get('theme')||'light',ready(){},expand(){},BackButton:{onClick(fn){telegramBack=fn;},show(){back.hidden=false;},hide(){back.hidden=true;}},onEvent(){},openTelegramLink(url){record({contact:decodeURIComponent(url)});document.getElementById('qa-status').textContent='LOCAL CONTACT: '+decodeURIComponent(url);}}};
+const status=document.createElement('output');status.id='qa-status';status.textContent='LOCAL CONTRACT UAT · no external requests/messages';status.style.cssText='display:block;font:12px monospace;padding:12px;background:#eee;color:#111;overflow-wrap:anywhere';document.body.append(status);
 window.fetch=async(url,options={})=>{
  const u=new URL(url,location.href);if(u.hostname!==location.hostname&&u.hostname!=='dbgcpgteuwkxqjgvppfp.supabase.co')throw Error('Blocked by UAT');
  const action=u.searchParams.get('action'),body=options.body?JSON.parse(options.body):{};
+ record({action,id:u.searchParams.get('id'),offset:u.searchParams.get('offset'),explore:u.searchParams.get('explore'),size:body.size||null,interaction:body.interactionName||null});
  const answer=(value,code=200)=>new Response(JSON.stringify(value),{status:code,headers:{'Content-Type':'application/json'}});
  status.textContent='LOCAL '+action+' '+(body.interactionName||body.size||u.searchParams.get('id')||'');
  if(action==='catalog'){
+   catalogAttempts++;
+   if(params.get('catalog')==='error'||(params.get('catalog')==='retry'&&catalogAttempts===1))return answer({},500);
    if(signed&&u.searchParams.get('explore')!=='1')return answer({error:'explore required'},400);
    const offset=Number(u.searchParams.get('offset')),limit=Number(u.searchParams.get('limit'));
    return answer({total:data.length,items:data.slice(offset,offset+limit).map(({images,sizes,description,...p})=>({...p,sizeCount:sizes.length}))});
  }
  if(action==='product'){
+   if(params.get('detail')==='error')return answer({},500);
    const id=Number(u.searchParams.get('id'));
    if(signed&&signed!=='product_'+id&&u.searchParams.get('explore')!=='1')return answer({error:'explore required'},400);
    const p=data.find(x=>x.id===id);return p?answer(p):answer({},404);
@@ -50,4 +63,4 @@ http.createServer(async(req,res)=>{
    if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260926-brand-home"','src="/__qa/setup.js"');
    res.setHeader('Content-Type',name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.css')?'text/css':'text/javascript');res.end(content);
  }catch{res.writeHead(500);res.end('Local UAT failed');}
-}).listen(43135,'127.0.0.1',()=>console.log('Local contract UAT: http://127.0.0.1:43135/vetrina-telegram/'));
+}).listen(port,'127.0.0.1',()=>console.log('Local staging UAT: http://127.0.0.1:'+port+'/vetrina-telegram/ · assets: '+root.pathname));

@@ -29,15 +29,45 @@ four on desktop. Original photos and the full-image gallery are unchanged.
 - Unit coverage includes future brand/category grouping and an empty catalog.
 
 The read-only live catalog query on 26 September returned 50 Louis Vuitton and
-67 On products. Local UAT uses only customer-facing fields: current list IDs and
-covers combined with an existing customer DTO fixture for details. Missing data
-stays unconfirmed. These are visual/contract tests, not live stock/price checks or
+67 On products. The first visual preview used customer-facing catalog fields.
+The final release UAT instead uses 117 synthetic customer DTOs with approved
+public covers, long text, missing prices, unsupported currency, and simulated
+size outcomes. These are visual/contract tests, not live stock/price checks or
 an authenticated physical-iPhone test. The preview transport cannot send messages.
+
+## Final staging UAT
+
+There is no remote frontend staging environment: GitHub Pages serves production
+only. A separate localhost server on port 43137 serves the frozen six-asset build
+from frontend commit `50541dae09f2443dc2700cf2142be08f14c7f212`. Only the test
+HTML injects the isolated SDK/transport. Production assets remain byte-identical.
+
+44 browser assertions passed, with no console errors:
+
+- Home and catalog at 320×568, 375×667, 430×932, 768×1024, 932×430 and 1440×900;
+  square product images, expected 2/3/4 columns, no horizontal overflow.
+- Brand selection, pagination, SKU and empty search, descending price sort,
+  invalid price bounds and combined brand/gender/price filters.
+- Gallery navigation, 150% zoom/reset, size cancellation and explicit selection;
+  available, unavailable, unknown, failed and queued availability outcomes.
+- Simulated order keeps the model, reference, selected EU size and original post
+  URL. Returning restores the filters; Telegram Back returns to the brand home.
+- Empty/error catalog, recovery on retry, unauthenticated access with no API
+  requests, product error and explicit recovery to the brand homepage.
+- Direct product launch makes exactly one product request with no catalog
+  prefetch; explicit exploration, browser back/forward and light/dark switching.
+
+The JSON assertion report, build manifest and screenshots are retained in the
+local `vetrina-brand-home-evidence-20260926` folder. One assertion initially used
+the wrong test selector (`.card`); correcting it to `.product-card` passed without
+an application change. Physical iPhone/VoiceOver and live stock checks remain
+outside this browser UAT.
 
 ## Release boundary
 
 Frontend only; no migration, Edge deployment or Telegram post edit required.
 The entrypoint, CSS and changed catalog module have new cache versions; previous
 entry URLs remain valid. GitHub Pages publishes `main:/`, so merging is the public
-release. Obtain release approval, recheck the exact final SHA and Pages build,
+release. The user authorized production after complete staging UAT on 26 September.
+Recheck the exact final SHA and Pages build,
 compare all six live assets, and record the release. Rollback is a reviewed revert.
