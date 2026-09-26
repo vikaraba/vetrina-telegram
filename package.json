@@ -1,0 +1,10 @@
+{
+  "name": "vetrina-telegram",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "verify": "node --check app.js && node --check storefront-api.mjs && node --check size-picker.mjs && node --test *.test.mjs && node scripts/build.mjs",
+    "preview": "node scripts/preview.mjs"
+  },
+  "engines": { "node": ">=24 <25" }
+}

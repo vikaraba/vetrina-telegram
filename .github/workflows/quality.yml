@@ -1,0 +1,29 @@
+name: Mini App quality
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      requested_by_tool:
+        type: choice
+        options: [human, codex, claude]
+        required: true
+      requested_by_task:
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: miniapp-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm run verify
