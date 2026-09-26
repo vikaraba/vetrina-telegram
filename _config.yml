@@ -1,4 +1,5 @@
 exclude:
+  - AGENTS.md
   - README.md
   - "*.test.mjs"
   - scripts
