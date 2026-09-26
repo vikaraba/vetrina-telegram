@@ -51,6 +51,11 @@ Non si scaricano tutti i dettagli per simulare quel filtro, inquinando le apertu
 
 ## Verifica e rilascio
 
+Le prestazioni sono un requisito dal design: applicare sempre
+[la checklist prestazionale](docs/performance-release.md), con prove di tutte
+le funzioni su iPhone e Mac e confronto alla versione precedente. Il gate di
+codice non sostituisce queste misure end-to-end.
+
 Node24, nessuna dipendenza da installare:
 
 ```sh
