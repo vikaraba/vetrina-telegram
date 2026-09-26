@@ -25,7 +25,12 @@ export class StorefrontError extends Error{
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount};
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+}
+export function telegramPostUrl(value){
+  // Accept message permalinks only, never a source website, profile, invite or launch URL.
+  if(typeof value!=='string')return null;
+  return /^https:\/\/t\.me\/(?:c\/[1-9][0-9]*|[A-Za-z][A-Za-z0-9_]{4,31})\/(?:[1-9][0-9]*\/)?[1-9][0-9]*$/.test(value)&&!/[\s]/.test(value)?value:null;
 }
 export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=12000,sleep=ms=>new Promise(r=>setTimeout(r,ms)),pollAttempts=20}={}){
   const pageSessionId=randomUuid();let explored=false;
@@ -97,10 +102,12 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
   };
 }
 export function contactUrl(product,size){
+  const post=telegramPostUrl(product.telegramPostUrl);
   const message='Анастасия, здравствуйте!\n\nМеня интересует '+product.brand+' '+product.name+
     (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+product.color:'')+'.'+
     (size?'\nРазмер '+(product.category==='shoes'?'EU ':'')+size+'.':'')+
-    '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!';
+    '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!'+
+    (post?'\n\nПубликация в каталоге:\n'+post:'');
   return 'https://t.me/buyer_rome?text='+encodeURIComponent(message);
 }
 export function openContact(client,tg,product,size,navigate=url=>{globalThis.location.href=url;}){
