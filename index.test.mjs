@@ -12,16 +12,19 @@ test('RUB only, non-positive or absent price remains unconfirmed',()=>{assert.ma
 test('release entry and order module share a cache version, preview remains isolated',async()=>{
   const version=html.match(/src="\.\/app\.js\?v=([a-zA-Z0-9-]+)"/)[1];
   assert.ok(app.includes("from './storefront-api.mjs?v="+version+"'"));
+  assert.ok(app.includes("from './catalog-core.mjs?v="+version+"'"));
+  assert.ok(html.includes('href="./style.css?v='+version+'"'));
   const preview=await read('scripts/preview.mjs');
   assert.ok(preview.includes("await import('/vetrina-telegram/app.js?v="+version+"')"));
   assert.ok(preview.includes('src="./app.js?v='+version+'"'));
 });
-test('approved top navigation, minimal copy, six-card grid and roller stay intact',()=>{
+test('top navigation, minimal copy, proportional product grid and roller stay intact',()=>{
   assert.match(app,/<nav class="detail-nav"/);assert.equal((app.match(/id="explore"/g)||[]).length,1);
   assert.match(app,/Вернуться в каталог/);assert.match(app,/Посмотреть другие модели/);
   assert.match(css,/\.detail-nav\{position:sticky;top:0/);
-  assert.match(css,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.product-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.doesNotMatch(css,/\.card-image\{[^}]*100svh/);
   assert.match(html,/id="size-wheel"[^>]+role="listbox"/);assert.match(css,/scroll-snap-type:y mandatory/);
   assert.doesNotMatch(app+html,/Для вас, под заказ|Наличие и итоговую стоимость подтверждает Анастасия перед покупкой|Ваш персональный каталог|ПЕРСОНАЛЬНЫЙ ШОПИНГ/);
 });

@@ -1,14 +1,14 @@
-import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260926-order-post';
+import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260926-brand-home';
 const tg=window.Telegram?.WebApp;
 tg?.ready();tg?.expand();
 const client=createStorefrontClient({tg});
 import {sizeValues,createSizeWheel,createLatestCheck} from './size-picker.mjs';
-import {blankFilters,modelName,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice} from './catalog-core.mjs';
+import {blankFilters,modelName,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice,brandCollections} from './catalog-core.mjs?v=20260926-brand-home';
 const $=s=>document.querySelector(s);
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const paths={sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>',filter:'<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="17" r="2" fill="currentColor"/>',arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',back:'<path d="M19 12H5m5-5-5 5 5 5"/>',photo:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 17 5-5 4 3 3-4 5 6"/><circle cx="8" cy="9" r="1"/>',zoom:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5M7 10h6m-3-3v6"/>',bag:'<path d="M5 7h14l1 14H4L5 7Zm3 0V5a4 4 0 0 1 8 0v2"/>',chat:'<path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2 1.5-5A8 8 0 1 1 20 11.5Z"/><path d="M7 10h9M7 14h6"/>',check:'<path d="m5 12 4 4L19 6"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/>',left:'<path d="m15 6-6 6 6 6"/>',right:'<path d="m9 6 6 6-6 6"/>'};
 const icon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[n]||paths.info}</svg>`;
-const state={products:[],filters:blankFilters(),draft:blankFilters(),query:'',sort:'curated',limit:12,product:null,imageIndex:0,size:null,check:'idle',navigation:0,catalogLoaded:false,explored:false,theme:'light',scroll:0,source:'catalog'};
+const state={page:'home',products:[],filters:blankFilters(),draft:blankFilters(),query:'',sort:'curated',limit:12,product:null,imageIndex:0,size:null,check:'idle',navigation:0,catalogLoaded:false,explored:false,theme:'light',scroll:0,source:'catalog'};
 const money=p=>p.priceCurrency==='RUB'&&Number.isFinite(p.priceAmount)&&p.priceAmount>0?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(p.priceAmount)+' ₽':'Цена уточняется';
 const title=modelName;
 const colors={'Nero':'Чёрный','Rosso Ciliegia':'Вишнёвый','Rosa Ballerina':'Нежно-розовый','Altri pellami':'Кожа','Fashion Leather':'Кожа','GAZON':'Зелёный'};
@@ -23,9 +23,9 @@ function announce(text){$('#announcement').textContent=text;}
 function setTheme(theme){state.theme=theme;document.documentElement.dataset.theme=theme;$('#theme').innerHTML=icon(theme==='light'?'moon':'sun');$('#theme').setAttribute('aria-label',theme==='light'?'Переключить на тёмную тему':'Переключить на светлую тему');document.querySelector('meta[name=theme-color]').content=theme==='light'?'#f8f7f3':'#14211b';}
 $('#theme').onclick=()=>setTheme(state.theme==='light'?'dark':'light');setTheme(tg?.colorScheme==='dark'?'dark':'light');
 tg?.onEvent?.('themeChanged',()=>setTheme(tg.colorScheme==='dark'?'dark':'light'));
-tg?.BackButton?.onClick?.(()=>{const open=[...document.querySelectorAll('dialog[open]')].at(-1);if(open)open.close();else if(state.product)showCatalog({restore:true});});
+tg?.BackButton?.onClick?.(()=>{const open=[...document.querySelectorAll('dialog[open]')].at(-1);if(open)open.close();else if(state.product)showCatalog({restore:true});else if(state.page==='catalog')showHome();});
 function navigationUrl(id){const url=new URL(location.href);if(id)url.searchParams.set('product',id);else url.searchParams.delete('product');return url.pathname+url.search+url.hash;}
-function errorScreen(error,retry){document.body.classList.remove('has-product');$('#app').innerHTML=`<div class="empty-state" role="alert"><h2>${error?.status===401?'Откройте каталог в Telegram':'Не удалось загрузить каталог'}</h2><p>${escapeHtml(error?.message||'Проверьте соединение и попробуйте ещё раз.')}</p><button id="retry-load" class="primary">${error?.status===401?'Открыть в Telegram':'Попробовать снова'}</button><button id="error-catalog" class="text-button">В каталог</button></div>`;$('#retry-load').onclick=error?.status===401?()=>{if(tg?.openTelegramLink)tg.openTelegramLink(MINI_APP_URL);else location.href=MINI_APP_URL;}:retry;$('#error-catalog').onclick=()=>showCatalog({reset:true});}
+function errorScreen(error,retry){document.body.classList.remove('has-product');$('#app').innerHTML=`<div class="empty-state" role="alert"><h2>${error?.status===401?'Откройте каталог в Telegram':'Не удалось загрузить каталог'}</h2><p>${escapeHtml(error?.message||'Проверьте соединение и попробуйте ещё раз.')}</p><button id="retry-load" class="primary">${error?.status===401?'Открыть в Telegram':'Попробовать снова'}</button><button id="error-catalog" class="text-button">К брендам</button></div>`;$('#retry-load').onclick=error?.status===401?()=>{if(tg?.openTelegramLink)tg.openTelegramLink(MINI_APP_URL);else location.href=MINI_APP_URL;}:retry;$('#error-catalog').onclick=()=>showHome();}
 
 
 function results(filters=state.filters){
@@ -37,17 +37,51 @@ const filterCount=()=>activeCount(state.filters);
 const productNoun=n=>n%100>=11&&n%100<=14?'товаров':n%10===1?'товар':n%10>=2&&n%10<=4?'товара':'товаров';
 const facetLabel=(key,value)=>key==='category'?categoryLabel(value):key==='gender'?genderLabel(value):key==='color'?colorLabel(value):value;
 function renderCard(p){return `<button class="product-card" data-product="${p.id}" aria-label="${escapeHtml(p.brand+' '+title(p)+', '+money(p))}"><span class="card-image"><img src="${cover(p)}" alt="${escapeHtml(title(p)+' · '+color(p))}" loading="lazy" decoding="async" width="480" height="480"></span><span class="card-copy"><span class="card-brand">${escapeHtml(p.brand)}</span><span class="card-name">${escapeHtml(title(p))}</span><span class="card-description">${escapeHtml(categoryOf(p)==='shoes'?gender(p)+' · '+color(p):color(p))}</span><span class="card-price">${money(p)}<span aria-hidden="true">↗</span></span></span></button>`;}
-async function showCatalog({reset=false,restore=false,push=true}={}){
-  closeOverlays();sizeCheck.cancel();const navigation=++state.navigation;state.product=null;state.explored=true;client.explore();tg?.BackButton?.hide?.();
-  if(!state.catalogLoaded){$('#app').innerHTML='<div class="loading-state" role="status"><span class="spinner"></span>Загружаем каталог…</div>';try{const products=await client.catalog();if(navigation!==state.navigation)return;state.products=products;state.catalogLoaded=true;}catch(error){if(navigation===state.navigation)errorScreen(error,()=>showCatalog({reset,restore,push}));return;}}
+let catalogPromise=null;
+async function loadCatalog(navigation,retry){
+  if(state.catalogLoaded)return true;
+  $('#app').innerHTML='<div class="loading-state" role="status"><span class="spinner"></span>Загружаем каталог…</div>';
+  try{
+    catalogPromise??=client.catalog().finally(()=>{catalogPromise=null;});
+    const products=await catalogPromise;
+    if(navigation!==state.navigation)return false;
+    state.products=products;state.catalogLoaded=true;return true;
+  }catch(error){if(navigation===state.navigation)errorScreen(error,retry);return false;}
+}
+function saveCatalogHistory(){
+  if(state.page!=='catalog'||!history.state?.catalog)return;
+  history.replaceState({...history.state,filters:{...state.filters},query:state.query,sort:state.sort,limit:state.limit,scroll:window.scrollY},'',location.href);
+}
+async function showHome({push=true}={}){
+  saveCatalogHistory();closeOverlays();sizeCheck.cancel();const navigation=++state.navigation;
+  state.page='home';state.product=null;state.explored=true;state.source='catalog';client.explore();
+  document.body.classList.remove('has-product');tg?.BackButton?.hide?.();
+  if(!await loadCatalog(navigation,()=>showHome({push})))return;
+  if(push)history.pushState({home:true,explored:true},'',navigationUrl());
+  const brands=brandCollections(state.products);
+  const cards=brands.map(({brand,count,categories,products})=>{
+    const photo=products.map(cover).find(Boolean);
+    return `<button class="brand-card" data-open-brand="${escapeHtml(brand)}" aria-label="${escapeHtml(brand)}, ${count} ${productNoun(count)}"><span class="brand-card-image">${photo?`<img src="${photo}" alt="" width="600" height="600" decoding="async">`:`<span class="brand-placeholder">${escapeHtml(brand)}</span>`}</span><span class="brand-card-copy"><strong>${escapeHtml(brand)}</strong><span class="brand-card-categories">${escapeHtml(categories.join(' · '))}</span><span class="brand-card-bottom"><span>${count} ${productNoun(count)}</span>${icon('arrow')}</span></span></button>`;
+  }).join('');
+  $('#app').innerHTML=`<section class="brand-home" aria-labelledby="home-title"><header class="home-heading"><p class="eyebrow">БАЙЕР АНАСТАСИЯ · ИТАЛИЯ</p><h1 id="home-title" tabindex="-1">Каталог по брендам</h1><p>Выберите бренд и найдите свою модель.</p></header>${brands.length?`<div class="brand-grid">${cards}</div><button id="all-products" class="secondary home-all">Все товары <span>${state.products.length}</span>${icon('arrow')}</button>`:'<div class="empty-state"><h2>Каталог скоро пополнится</h2><p>Новые модели появятся здесь.</p></div>'}</section>`;
+  document.querySelectorAll('[data-open-brand]').forEach(button=>button.onclick=()=>{showCatalog({reset:true,brand:button.dataset.openBrand});});
+  if($('#all-products'))$('#all-products').onclick=()=>showCatalog({reset:true});
+  window.scrollTo({top:0,behavior:'instant'});$('#home-title').focus({preventScroll:true});
+}
+async function showCatalog({reset=false,restore=false,push=true,brand=null}={}){
+  closeOverlays();sizeCheck.cancel();const navigation=++state.navigation;state.page='catalog';state.product=null;state.explored=true;state.source='catalog';client.explore();tg?.BackButton?.show?.();
+  document.body.classList.remove('has-product');
+  if(!await loadCatalog(navigation,()=>showCatalog({reset,restore,push,brand})))return;
   if(reset){state.filters=blankFilters();state.query='';state.limit=12;state.sort='curated';state.scroll=0;}
+  if(brand)state.filters={...blankFilters(),brand};
   state.product=null;document.body.classList.remove('has-product');
   if(push)history.pushState({catalog:true,explored:true},'',navigationUrl());
-  $('#app').innerHTML=`<section class="catalog" aria-label="Каталог"><h1 class="sr-only">Каталог</h1><div class="catalog-toolbar"><label class="search-field">${icon('search')}<span class="sr-only">Поиск по бренду, модели или артикулу</span><input type="search" id="search" placeholder="Бренд, модель, артикул" value="${escapeHtml(state.query)}" autocomplete="off"></label><button id="filters-open" class="filter-button" aria-label="Открыть фильтры">${icon('filter')}<span class="filter-text">Фильтры</span><span id="filter-badge" class="filter-count" hidden></span></button></div><div class="brand-strip" id="brand-strip" aria-label="Бренды"></div><div class="active-filters" id="active-filters" aria-label="Выбранные фильтры"></div><div class="catalog-meta"><span id="result-count" aria-live="polite"></span><label class="sort-label"><select id="sort" aria-label="Сортировка">${[['curated','По умолчанию'],['low','Сначала дешевле'],['high','Сначала дороже'],['name','По названию']].map(([key,label])=>`<option value="${key}" ${state.sort===key?'selected':''}>${label}</option>`).join('')}</select></label></div><div class="product-grid" id="products"></div><div class="more-wrap" id="more-wrap"></div></section>`;
+  $('#app').innerHTML=`<section class="catalog" aria-label="Каталог"><nav class="catalog-nav" aria-label="Навигация по каталогу"><button id="back-home" class="back-button">${icon('back')}<span>Бренды</span></button><h1 id="catalog-title">${escapeHtml(state.filters.brand==='all'?'Все товары':state.filters.brand)}</h1></nav><div class="catalog-toolbar"><label class="search-field">${icon('search')}<span class="sr-only">Поиск по бренду, модели или артикулу</span><input type="search" id="search" placeholder="Бренд, модель, артикул" value="${escapeHtml(state.query)}" autocomplete="off"></label><button id="filters-open" class="filter-button" aria-label="Открыть фильтры">${icon('filter')}<span class="filter-text">Фильтры</span><span id="filter-badge" class="filter-count" hidden></span></button></div><div class="brand-strip" id="brand-strip" aria-label="Бренды"></div><div class="active-filters" id="active-filters" aria-label="Выбранные фильтры"></div><div class="catalog-meta"><span id="result-count" aria-live="polite"></span><label class="sort-label"><select id="sort" aria-label="Сортировка">${[['curated','По умолчанию'],['low','Сначала дешевле'],['high','Сначала дороже'],['name','По названию']].map(([key,label])=>`<option value="${key}" ${state.sort===key?'selected':''}>${label}</option>`).join('')}</select></label></div><div class="product-grid" id="products"></div><div class="more-wrap" id="more-wrap"></div></section>`;
+  $('#back-home').onclick=()=>showHome();
   $('#search').oninput=e=>{state.query=e.target.value;state.limit=12;renderResults();};
   $('#search').onchange=()=>event('catalog_search',{query:state.query,resultCount:results().length});
   $('#sort').onchange=e=>{state.sort=e.target.value;renderResults();};$('#filters-open').onclick=openFilters;
-  renderResults();window.scrollTo({top:restore?state.scroll:0,behavior:'instant'});
+  renderResults();window.scrollTo({top:restore?state.scroll:0,behavior:'instant'});saveCatalogHistory();
 }
 function renderFilterSummary(){
   const count=filterCount();$('#filter-badge').hidden=!count;$('#filter-badge').textContent=count;
@@ -62,14 +96,16 @@ function renderFilterSummary(){
   document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{const key=b.dataset.remove;state.filters[key]=blankFilters()[key];state.limit=12;renderResults();});
 }
 function renderResults(){
+  $('#catalog-title').textContent=state.filters.brand==='all'?'Все товары':state.filters.brand;
   const list=results(),shown=list.slice(0,state.limit);
   renderFilterSummary();
   $('#result-count').innerHTML=`<strong>${list.length}</strong> ${productNoun(list.length)}${filterCount()?` <button class="text-button" id="clear-filters">Сбросить</button>`:''}`;
   $('#products').innerHTML=list.length?shown.map(renderCard).join(''):'<div class="empty-state" style="grid-column:1/-1"><h2>Ничего не найдено</h2><p>Измените запрос или фильтры.</p><button class="secondary" id="empty-reset">Сбросить поиск и фильтры</button></div>';
   $('#more-wrap').innerHTML=list.length?`${shown.length<list.length?'<button id="more" class="secondary">Показать ещё '+icon('arrow')+'</button>':''}<p>${shown.length} из ${list.length}</p>`:'';
-  document.querySelectorAll('[data-product]').forEach(b=>b.onclick=()=>{state.scroll=window.scrollY;state.source='catalog';showProduct(Number(b.dataset.product));});
+  document.querySelectorAll('[data-product]').forEach(b=>b.onclick=()=>{state.scroll=window.scrollY;saveCatalogHistory();state.source='catalog';showProduct(Number(b.dataset.product));});
   if($('#clear-filters'))$('#clear-filters').onclick=()=>{state.filters=blankFilters();state.limit=12;renderResults();};
   if($('#empty-reset'))$('#empty-reset').onclick=()=>showCatalog({reset:true,push:false});
+  saveCatalogHistory();
   if($('#more'))$('#more').onclick=()=>{state.limit+=12;renderResults();announce(`Показано ${Math.min(state.limit,list.length)} из ${list.length} товаров`);};
 }
 function openFilters(){state.draft={...state.filters};renderFilterFields();$('#filters-dialog').showModal();}
@@ -97,6 +133,7 @@ function updateFilterCount(){
 $('#filters-reset').onclick=()=>{state.draft=blankFilters();renderFilterFields();};
 $('#filters-apply').onclick=()=>{if(priceError(state.draft))return;state.filters={...state.draft};state.limit=12;event('catalog_filter',{filters:state.filters,resultCount:results().length});$('#filters-dialog').close();showCatalog({push:false});};
 async function showProduct(id,{push=true}={}){
+  saveCatalogHistory();state.page='product';
   closeOverlays();sizeCheck.cancel();const navigation=++state.navigation;
   state.product=null;document.body.classList.remove('has-product');
   $('#app').innerHTML='<div class="loading-state" role="status"><span class="spinner"></span>Загружаем модель…</div>';
@@ -192,6 +229,13 @@ $('#zoom-stage').onpointermove=e=>{const old=pointers.get(e.pointerId);if(!old)r
 for(const name of ['pointerup','pointercancel'])$('#zoom-stage').addEventListener(name,e=>{pointers.delete(e.pointerId);pinchBase=null;});
 $('#zoom-dialog').addEventListener('close',()=>{pointers.clear();pinchBase=null;});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
-window.addEventListener('popstate',e=>{if(e.state?.explored){client.explore();state.explored=true;}e.state?.product?showProduct(e.state.product,{push:false}):showCatalog({restore:true,push:false});});
-async function boot(){if(!tg?.initData){errorScreen(new StorefrontError(401),boot);return;}const id=requestedProductId(tg,location.search);if(id){state.source='telegram_product_post';history.replaceState({product:id,explored:false},'',location.href);await showProduct(id,{push:false});}else {history.replaceState({catalog:true,explored:true},'',location.href);await showCatalog({push:false});}}
+window.addEventListener('popstate',e=>{
+  if(e.state?.explored){client.explore();state.explored=true;}
+  if(e.state?.product){showProduct(e.state.product,{push:false});return;}
+  if(e.state?.catalog){
+    state.filters={...blankFilters(),...e.state.filters};state.query=e.state.query||'';state.sort=e.state.sort||'curated';state.limit=e.state.limit||12;state.scroll=e.state.scroll||0;
+    showCatalog({restore:true,push:false});
+  }else showHome({push:false});
+});
+async function boot(){if(!tg?.initData){errorScreen(new StorefrontError(401),boot);return;}const id=requestedProductId(tg,location.search);if(id){state.source='telegram_product_post';history.replaceState({product:id,explored:false},'',location.href);await showProduct(id,{push:false});}else {history.replaceState({home:true,explored:true},'',location.href);await showHome({push:false});}}
 boot();

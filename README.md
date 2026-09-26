@@ -38,7 +38,13 @@ backend; nessun prefetch di dettagli genera aperture artificiali.
 
 ## Layout
 
-Catalogo minimale multibrand, sei card complete sui viewport mobile collaudati,
+L'apertura generica mostra i brand restituiti dal catalogo cliente, con copertina,
+categorie e conteggio. La scelta apre il brand; “Все товары” apre tutto il catalogo.
+“Бренды” torna alla homepage. I link prodotto aprono direttamente la scheda.
+
+Catalogo minimale multibrand, due colonne stabili su mobile, quattro su desktop
+e tre su tablet. Le foto sono quadrate, con proporzioni originali e senza altezze
+compresse per far entrare un numero fisso di articoli nello schermo. Restano
 prezzi RUB, ricerca SKU/LV/лв, brand, modello, genere, categoria, colore e budget.
 Le pagine API vengono raccolte fino al totale, non solo i primi100 elementi.
 Le foto complete sono richieste soltanto aprendo il prodotto. La griglia carica
