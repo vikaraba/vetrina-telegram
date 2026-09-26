@@ -1,8 +1,8 @@
 # Ampliamento Van Cleef, Cartier e Messika
 
 Richiesta aggiornata: aggiungere Van Cleef, Cartier, Messika e gli orologi al minisito.
-Baseline frontend integrata: 2365ac67d887bd15263c586688eefd34d52e31c1.
-CRM source dell'audit: 136ea8ed94edf9d9546d3579549b4952fd1d4fa2.
+Baseline frontend integrata: 9c16b49146be07be453ffedfa3886566d6149ca6.
+CRM source dell'audit aggiornato: 3934dfc2ac3a36f666962007d42d2bfd46de48dd.
 
 ## Differenze circoscritte
 
@@ -15,7 +15,8 @@ CRM source dell'audit: 136ea8ed94edf9d9546d3579549b4952fd1d4fa2.
   inventato. Le schede senza prezzo RUB valido non diventano pubblicabili.
 - Entry point, modulo ordini e modulo catalogo hanno una versione cache coerente.
 - Preview locale con porta configurabile, per non interrompere altre anteprime.
-- Layout, sei card, colori, foto/zoom, navigazione, roller ON, prezzo e chat
+- Homepage brand e griglia proporzionale della PR #13, colori, foto/zoom,
+  navigazione, roller ON, prezzo e chat
   restano invariati. Nessun endpoint, dato, prezzo o post viene modificato da questa PR.
 
 ## Verifica locale del 26 settembre 2026
@@ -91,3 +92,20 @@ Prezzi Cartier da riconciliare e prezzi cliente Chopard assenti restano bloccant
 
 requested_by_tool: codex
 requested_by_task: 01a0214c-98c9-7852-9e6d-fd1410b15e31
+
+## Lotto non-ON del 27 settembre
+
+L'utente ha dato priorità alle tipologie diverse da ON. Nessuna attivazione,
+rettifica prezzo o pubblicazione Telegram ON è inclusa. La PR è riallineata
+alla homepage brand già pubblicata, senza cambiare layout o flussi approvati.
+Gate Node 24: 49 test passati, sintassi e build dei sei asset PASS.
+
+Primo manifest VCA: 433, 435, 492, 493, 494, 495, 496. Prezzi cliente manuali
+RUB invariati; 31 immagini ufficiali già presenti nel CRM. Nuova verifica fonte
+alle 22:07 UTC del 26/09 (00:07 Italia del 27/09): 7/7 referenze, prezzi fonte,
+gallerie complete e disponibilità osservata PASS. Attivazione ancora subordinata
+a UAT della revisione integrata, confronto reattività e deployment verificato.
+
+Il collaudo locale non sostituisce la firma Telegram né prova stock garantito.
+Cartier resta separato: 107 discrepanze prodotto/prezzo fonte; Messika e Chopard
+non hanno ancora un prezzo cliente RUB approvato. Nessuna formula viene inventata.

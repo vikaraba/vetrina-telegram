@@ -14,7 +14,7 @@ dialog{padding:0;border:1px solid var(--line);background:var(--surface);color:va
 .product-card{align-self:start}
 .prototype-bar{padding-top:0;padding-bottom:0;min-height:44px}.prototype-bar button{min-height:44px}
 
-/* Minimal multibrand catalog. Six complete cards at normal text size. */
+/* Product images keep their proportions at every viewport height. */
 .catalog{animation:fade .2s ease;padding-top:max(16px,env(safe-area-inset-top))}
 .catalog-toolbar{display:flex;gap:10px;align-items:center}
 .catalog-toolbar .search-field{display:block}
@@ -29,9 +29,9 @@ dialog{padding:0;border:1px solid var(--line);background:var(--surface);color:va
 .filter-chip>span{font-size:20px}
 .catalog-meta{margin:0 0 8px;min-height:44px;flex-direction:row;align-items:center;font-size:12px}
 .catalog-meta .text-button{font-size:12px;padding:5px 8px}
-.product-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:16px 14px}
-.card-image{aspect-ratio:auto;height:clamp(64px,calc(100svh - 300px),260px);border-radius:10px}
-.catalog:has(.active-filters:not([hidden])) .card-image{height:clamp(64px,calc(100svh - 352px),260px)}
+.product-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:28px 20px}
+.card-image{aspect-ratio:1;height:auto;border-radius:14px}
+
 .card-copy{display:grid;grid-template-rows:12px 36px 15px 21px;padding:6px 1px 0}
 .card-brand{font-size:10px;line-height:12px;letter-spacing:.7px}
 .card-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:14px;line-height:18px;height:36px;margin:0;overflow-wrap:normal}
@@ -56,7 +56,7 @@ dialog{padding:0;border:1px solid var(--line);background:var(--surface);color:va
 .product-info h1{font:550 clamp(27px,3vw,38px)/1.15 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;letter-spacing:-.035em}
 @media(min-width:701px) and (max-width:1100px){
  .catalog{padding-left:16px;padding-right:16px}
- .product-grid{gap:14px 10px}
+ .product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 16px}
  .card-name{font-size:13px}
  .card-description{font-size:11px}
  .card-price{font-size:14px}
@@ -68,24 +68,13 @@ dialog{padding:0;border:1px solid var(--line);background:var(--surface);color:va
  .catalog-toolbar .filter-button{padding:0 10px}
  .catalog-toolbar .search-field input{padding-right:28px;font-size:16px}
  .brand-strip{gap:22px}
- .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
- .card-image{height:clamp(64px,calc((100svh - 210px - env(safe-area-inset-bottom))/3 - 90px),170px)}
- .catalog:has(.active-filters:not([hidden])) .card-image{height:clamp(56px,calc((100svh - 262px - env(safe-area-inset-bottom))/3 - 90px),170px)}
+ .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px}
+
+
  .card-name{font-size:14px}
  .card-price{font-size:15px}
  .sort-label select{font-size:12px;max-width:155px}
  .sheet{height:92dvh}
-}
-@media(max-width:700px) and (max-height:740px){
- .product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
- .card-copy{grid-template-rows:36px 21px}
- .card-brand,.card-description{display:none}
- .card-image{height:clamp(56px,calc((100svh - 200px)/2 - 63px),155px)}
- .catalog:has(.active-filters:not([hidden])) .card-image{height:clamp(48px,calc((100svh - 252px)/2 - 63px),155px)}
- .card-name{font-size:12px;line-height:18px}
- .card-price{font-size:13px}
- .photo-count{font-size:9px;padding:1px 4px;left:3px;bottom:3px}
- .photo-count svg{width:10px;height:10px}
 }
 @media(max-width:360px){
  .catalog-toolbar .filter-text{display:none}
@@ -140,4 +129,37 @@ body:has(dialog[open]) .mobile-dock{visibility:hidden}
  .detail-nav .back-button,.browse-button{padding:10px 12px;gap:8px}
  .browse-button{flex:1;max-width:220px;min-width:0}
  .detail-actions:has(>.primary:only-child){display:none}
+}
+
+/* Brand entry uses the same customer-approved product covers as the catalog. */
+.brand-home{max-width:1120px;margin:auto;padding:36px 24px max(24px,env(safe-area-inset-bottom));animation:fade .2s ease}
+.home-heading{padding:16px 0 30px;max-width:650px}
+.home-heading h1{font:500 clamp(30px,4vw,48px)/1.12 Georgia,serif;letter-spacing:-.035em}
+.home-heading>p:last-child{color:var(--muted);margin-top:14px;font-size:16px}
+.brand-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.brand-grid:has(>.brand-card:last-child:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr))}
+.brand-card{display:flex;flex-direction:column;min-width:0;text-align:left;padding:0;border:1px solid var(--line);background:var(--surface);border-radius:18px;overflow:hidden;transition:border-color .2s}
+.brand-card:hover{border-color:var(--accent)}
+.brand-card-image{display:grid;place-items:center;aspect-ratio:4/3;width:100%;overflow:hidden;background:#fff}
+.brand-card-image img{width:100%;height:100%;object-fit:contain;min-height:0}
+.brand-placeholder{padding:24px;color:#304c3d;font:32px Georgia,serif;overflow-wrap:anywhere}
+.brand-card-copy{display:flex;flex-direction:column;width:100%;padding:20px;flex:1;gap:6px}
+.brand-card-copy>strong{font:500 clamp(20px,2.4vw,28px)/1.2 Georgia,serif;overflow-wrap:anywhere}
+.brand-card-categories{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.brand-card-bottom{margin-top:auto;padding-top:18px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+.brand-card-bottom svg{width:20px;color:var(--text)}
+.home-all{display:flex;width:100%;margin-top:24px;justify-content:space-between;min-height:56px}
+.home-all>span{margin-left:auto;font-size:13px;color:var(--muted);font-weight:400}
+.catalog-nav{display:flex;align-items:center;gap:18px;margin-bottom:12px;min-width:0}
+.catalog-nav .back-button{flex:none;min-width:84px}
+.catalog-nav h1{font:500 22px/1.2 Georgia,serif;overflow-wrap:anywhere}
+@media(max-width:700px){
+ .brand-home{padding:max(20px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+ .home-heading{padding:10px 0 24px}.home-heading .eyebrow{font-size:10px;letter-spacing:1.5px}
+ .home-heading h1{font-size:34px}.home-heading>p:last-child{font-size:14px;max-width:290px;line-height:1.6}
+ .brand-grid,.brand-grid:has(>.brand-card:last-child:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .brand-card{border-radius:14px}.brand-card-image{aspect-ratio:1}
+ .brand-card-copy{padding:14px 12px;gap:7px}.brand-card-copy>strong{font-size:23px}
+ .brand-card-categories{font-size:12px}.brand-card-bottom{font-size:12px;padding-top:16px}
+ .catalog-nav{gap:14px;margin-bottom:10px}.catalog-nav h1{font-size:21px}
 }

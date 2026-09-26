@@ -38,7 +38,13 @@ backend; nessun prefetch di dettagli genera aperture artificiali.
 
 ## Layout
 
-Catalogo minimale multibrand, sei card complete sui viewport mobile collaudati,
+L'apertura generica mostra i brand restituiti dal catalogo cliente, con copertina,
+categorie e conteggio. La scelta apre il brand; “Все товары” apre tutto il catalogo.
+“Бренды” torna alla homepage. I link prodotto aprono direttamente la scheda.
+
+Catalogo minimale multibrand, due colonne stabili su mobile, quattro su desktop
+e tre su tablet. Le foto sono quadrate, con proporzioni originali e senza altezze
+compresse per far entrare un numero fisso di articoli nello schermo. Restano
 prezzi RUB, ricerca SKU/LV/лв, brand, modello, genere, categoria, colore e budget.
 Le pagine API vengono raccolte fino al totale, non solo i primi100 elementi.
 Le foto complete sono richieste soltanto aprendo il prodotto. La griglia carica
@@ -71,6 +77,13 @@ MINIAPP_UAT_FIXTURE=/absolute/path/to/customer-products.json npm run preview
 Porta43135, bind127.0.0.1; CSP blocca API esterne. Il trasporto/SDK di test è
 iniettato solo da quel server, escluso da Pages. Non equivale a una verifica
 autenticata in Telegram o su iPhone fisico.
+
+Per collaudare un build congelato, impostare `MINIAPP_UAT_BUILD` alla directory
+dei sei asset e `MINIAPP_UAT_PORT` a una porta locale libera. Le query locali
+`catalog=empty|error|retry`, `detail=error`, `unauthenticated=1`,
+`outcome=available|unavailable|unknown|failed|queued` e `theme=dark` coprono gli
+stati limite. Il log visibile e il pulsante Telegram Back simulato consentono
+di verificare richieste e navigazione; i contatti restano sempre simulati.
 
 Prima del merge: gate e UAT della revisione finale, main ancora sulla base attesa.
 Dopo: una sola build Pages sull'esatto SHA, confronto hash dei sei asset live,
