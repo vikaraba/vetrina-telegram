@@ -1,6 +1,6 @@
 # Ampliamento Van Cleef, Cartier e Messika
 
-Richiesta aggiornata: aggiungere Van Cleef, Cartier e Messika al minisito.
+Richiesta aggiornata: aggiungere Van Cleef, Cartier, Messika e gli orologi al minisito.
 Baseline frontend integrata: 2365ac67d887bd15263c586688eefd34d52e31c1.
 CRM source dell'audit: 136ea8ed94edf9d9546d3579549b4952fd1d4fa2.
 
@@ -20,7 +20,7 @@ CRM source dell'audit: 136ea8ed94edf9d9546d3579549b4952fd1d4fa2.
 
 ## Verifica locale del 26 settembre 2026
 
-Node 24 `npm run verify`: 43/43 test, controllo sintassi e build dei sei asset
+Node 24 `npm run verify`: 47/47 test, controllo sintassi e build dei sei asset
 pubblici superati. Il precedente blocco del browser è risolto.
 
 UAT tramite browser con fixture customer DTO reali in sola lettura: 2 Cartier,
@@ -59,6 +59,35 @@ baseline/candidato a cache fredda/calda: la velocità non è dichiarata PASS.
 reale, coordinamento con il proprietario del rilascio CRM e attivazione per
 manifest esatto tramite RPC canonica. Nessun nuovo post Telegram autorizzato o
 eseguito in questo ampliamento. Non confondere eleggibilità tecnica e readiness.
+
+## Estensione orologi: referenza prima delle immagini
+
+- Alias `Orologi`, `Watches`, `Steel Watches`, `jewelry_watches` e `часы`
+  condividono il filtro russo `Часы`. Non classificare dal solo marchio o da
+  un diametro in millimetri: una categoria importata non prova l'identità.
+- Il titolo mantiene il nome completo della variante, non soltanto `Tank` o
+  `Serpenti`; la ricerca e l'ordine mantengono la referenza esatta.
+- Fonti ufficiali: 15 Cartier verificati con SKU JSON-LD, reference data layer
+  e URL canonico coincidenti; 128 immagini rilevate, 50 assenti dalle gallerie CRM.
+- Chopard: 16 schede storiche corrispondono a 15 referenze. Verifica con
+  `data-pid`, `productReference`, categoria `watches` del prodotto principale e
+  file galleria della stessa referenza. Raccomandazioni e varianti vicine escluse.
+  La referenza `278559-3001` compare due volte: nessun merge automatico di schede.
+- Bvlgari: 3 link ufficiali individuati, acquisizione automatica fermata per
+  challenge di sicurezza. Le pagine indicizzate non provano una verifica live.
+- Formex/Swatch/Tissot e due Longines non hanno una referenza utilizzabile nei
+  campi esaminati. Cinque Gucci classificati `orologi` descrivono anelli/orecchini;
+  altri record sono annunci generici. Nessuna attivazione per sola categoria.
+- Archivio immagini locale separato dai sei asset pubblici: bytes ufficiali
+  conservati, hash SHA256, deduplica e JPEG web max 1600px senza ingrandimento.
+  Nessun caricamento Storage, collegamento immagini CRM o attivazione eseguito.
+  Il download per fonte si ferma su accesso negato/rate limit; niente bypass.
+
+UAT locale aggiuntiva: due orologi reali, 430x932 (ricerca WSTA0136 → singola
+scheda product275 → bozza con WSTA0136 → ritorno con ricerca conservata) e
+1440x900 (categoria Часы → 2 schede → reset). Nessun overflow e nessun invio.
+Il test usa le gallerie CRM preesistenti; non attesta l'import delle nuove foto.
+Prezzi Cartier da riconciliare e prezzi cliente Chopard assenti restano bloccanti.
 
 requested_by_tool: codex
 requested_by_task: 01a0214c-98c9-7852-9e6d-fd1410b15e31
