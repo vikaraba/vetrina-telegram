@@ -1,93 +1,25 @@
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import test from "node:test";
-
-const source = await readFile(new URL("./index.html", import.meta.url), "utf8");
-
-test("il deep link accetta soltanto product_ID", () => {
-  assert.match(source, /\^product_\(\[1-9\]\[0-9\]\*\)\$/);
-  assert.match(source, /tgWebAppStartParam/);
-  assert.doesNotMatch(source, /searchParams\.get\(["']product["']\)/);
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const read=p=>readFile(new URL(p,import.meta.url),'utf8');
+const [app,html,css,api]=await Promise.all(['app.js','index.html','style.css','storefront-api.mjs'].map(read));
+test('production entrypoint uses relative assets and Telegram SDK, no prototype transport',()=>{
+  assert.match(html,/src="https:\/\/telegram.org\/js\/telegram-web-app.js"/);
+  assert.match(html,/src="\.\/app.js/);assert.match(html,/href="\.\/style.css/);
+  assert.doesNotMatch(html+app,/data.json|demo-result|Настройки демо|Прототип|simulated|scenario|prototype_/);
 });
-
-test("il prodotto diretto viene caricato prima e senza catalogo", () => {
-  const requested = source.indexOf("const requested=requestedProductId()");
-  const single = source.indexOf("await openSingleProduct(requested)", requested);
-  const catalog = source.indexOf("await loadCatalog(false)", requested);
-  assert.ok(requested > 0 && single > requested && catalog > single);
-  assert.match(source.slice(single, catalog), /return;/);
+test('RUB only, non-positive or absent price remains unconfirmed',()=>{assert.match(app,/p.priceCurrency==='RUB'/);assert.match(app,/Цена уточняется/);assert.doesNotMatch(app,/priceEur/);});
+test('approved top navigation, minimal copy, six-card grid and roller stay intact',()=>{
+  assert.match(app,/<nav class="detail-nav"/);assert.equal((app.match(/id="explore"/g)||[]).length,1);
+  assert.match(app,/Вернуться в каталог/);assert.match(app,/Посмотреть другие модели/);
+  assert.match(css,/\.detail-nav\{position:sticky;top:0/);
+  assert.match(css,/grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(html,/id="size-wheel"[^>]+role="listbox"/);assert.match(css,/scroll-snap-type:y mandatory/);
+  assert.doesNotMatch(app+html,/Для вас, под заказ|Наличие и итоговую стоимость подтверждает Анастасия перед покупкой|Ваш персональный каталог|ПЕРСОНАЛЬНЫЙ ШОПИНГ/);
 });
-
-test("la modalita singola mostra galleria e taglie del solo modello", () => {
-  assert.match(source, /product\.imageUrls/);
-  assert.match(source, /root\.className="single-product"/);
-  assert.match(source, /Все официальные фотографии выбранной модели/);
-  assert.match(source, /Найти другой товар/);
-  assert.match(source, /\?action=catalog&limit=100/);
-});
-
-test("prezzo cliente fail-closed esclusivamente in rubli", () => {
-  assert.match(source, /product\.priceAmount/);
-  assert.match(source, /product\.priceCurrency/);
-  assert.match(source, /currency!=="RUB"/);
-  assert.match(source, /style:"currency",currency:"RUB"/);
-  assert.match(source, /Цена уточняется/);
-  assert.doesNotMatch(source, /Number\(product\.priceEur\)/);
-  assert.doesNotMatch(source, />€ /);
-});
-
-test("tutte le taglie importate ON sono selezionabili e avviano una verifica reale", () => {
-  assert.match(source, /size\.selectable===true/);
-  assert.doesNotMatch(source, /size\.orderable/);
-  assert.match(source, /\?action=size-interest/);
-  assert.match(source, /\?action=size-status&checkId=/);
-  assert.doesNotMatch(source, /\?action=request/);
-});
-
-test("il contatto Anastasia viene tracciato prima di aprire buyer_rome", () => {
-  const tracked = source.indexOf('interactionName:"contact_anastasia_opened"');
-  const opened = source.indexOf("https://t.me/buyer_rome?text=");
-  assert.ok(tracked > 0 && opened > tracked);
-  assert.match(source, /product\.reference\|\|product\.id/);
-  assert.match(source, /Здравствуйте, Анастасия!/);
-  assert.match(source, /Размер: /);
-  assert.match(source, /Артикул: /);
-  assert.match(source, /Написать Анастасии/);
-});
-
-test("catalogo multibrand e zoom professionale restano disponibili dal prodotto",()=>{
-  assert.doesNotMatch(source,/brand=On/);
-  assert.match(source,/activeBrand="Все"/);
-  assert.match(source,/Бренд, модель или артикул/);
-  assert.match(source,/data-zoom/);
-  assert.match(source,/Щипок или двойное касание/);
-  assert.match(source,/pointermove/);
-  assert.match(source,/explore=1/);
-});
-
-test("i messaggi di stato sono professionali e contestuali alla misura", () => {
-  assert.match(source, /Проверяем размер \"\+size\+\"/);
-  assert.match(source, /Обычно это занимает несколько секунд/);
-  assert.match(source, /Запрос сохранён\. Напишите Анастасии/);
-  assert.doesNotMatch(source, /ON \"\+reference\+\" · размер/);
-});
-
-test("identificativi sessione ed evento hanno fallback UUID v4", () => {
-  assert.match(source, /crypto\.getRandomValues/);
-  assert.match(source, /bytes\[6\]=\(bytes\[6\]&15\)\|64/);
-  assert.match(source, /bytes\[8\]=\(bytes\[8\]&63\)\|128/);
-  assert.match(source, /const pageSessionId=randomUuid\(\)/);
-  assert.match(source, /const eventId=randomUuid/);
-});
-
-test("ogni apertura esporta il contesto WebApp versionato senza storage locale", () => {
-  assert.match(source, /telegram-webapp-client-v1/);
-  assert.match(source, /x-telegram-client-context/);
-  assert.match(source, /page_session_id/);
-  assert.match(source, /telegram_web_app/);
-  assert.match(source, /viewport_stable_height/);
-  assert.match(source, /safe_area_inset/);
-  assert.match(source, /client_reported/);
-  assert.match(source, /"x-telegram-init-data":tg\?\.initData/);
-  assert.doesNotMatch(source, /localStorage|sessionStorage|document\.cookie/);
-});
+test('safe-area, dark palette, reduced motion and readable input rules',()=>{assert.match(css,/safe-area-inset-bottom/);assert.match(css,/min-height:44px/);assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/font-size:16px/);assert.match(app,/themeChanged/);});
+test('identity never persisted by application; client context remains untrusted metadata',()=>{assert.doesNotMatch(app+api,/localStorage|sessionStorage|document.cookie/);assert.match(api,/client_reported/);assert.match(api,/x-telegram-init-data/);assert.match(api,/page_session_id/);});
+test('gallery never truncates; back and browser history keep catalog context',()=>{assert.doesNotMatch(app,/images[^\n]*slice\(0/);assert.match(app,/restore:true/);assert.match(app,/popstate/);assert.match(app,/navigation!==state.navigation/);assert.match(app,/BackButton/);});
+test('size check uses real service; future non-ON sizes remain manual, never fake available',()=>{assert.match(app,/sourceId==='on_running_it'\?client.checkSize/);assert.doesNotMatch(app,/setTimeout\(resolve,850\)/);assert.match(app,/Promise.resolve\('unknown'\)/);});
+test('catalog fetch does not auto-open product details or fabricate all-size facets',()=>{assert.doesNotMatch(app,/select\('size','Размер'/);assert.match(app,/p=await client.product\(id\)/);assert.match(app,/state.products=products/);});

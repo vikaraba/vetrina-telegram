@@ -1,0 +1,7 @@
+exclude:
+  - README.md
+  - "*.test.mjs"
+  - scripts
+  - docs
+  - package.json
+  - package-lock.json
