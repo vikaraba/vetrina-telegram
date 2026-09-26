@@ -1,4 +1,4 @@
-import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs';
+import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260926-order-post';
 const tg=window.Telegram?.WebApp;
 tg?.ready();tg?.expand();
 const client=createStorefrontClient({tg});

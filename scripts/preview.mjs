@@ -5,7 +5,7 @@ const root=new URL('../',import.meta.url);
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
 const raw=JSON.parse(await readFile(fixture,'utf8'));
-const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description}));
+const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
 const setup=`
 const originalFetch=window.fetch.bind(window);
 const params=new URLSearchParams(location.search);
@@ -33,7 +33,7 @@ window.fetch=async(url,options={})=>{
  if(action==='interaction')return answer({ok:true});
  throw Error('Unmocked UAT request');
 };
-await import('/vetrina-telegram/app.js?v=20260926');
+await import('/vetrina-telegram/app.js?v=20260926-order-post');
 `;
 const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs']);
 http.createServer(async(req,res)=>{
@@ -47,7 +47,7 @@ http.createServer(async(req,res)=>{
    const name=path.replace(/^\/vetrina-telegram\//,'')||'index.html';
    if(!assets.has(name)){res.writeHead(404);res.end();return;}
    let content=await readFile(new URL(name,root),'utf8');
-   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260926"','src="/__qa/setup.js"');
+   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260926-order-post"','src="/__qa/setup.js"');
    res.setHeader('Content-Type',name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.css')?'text/css':'text/javascript');res.end(content);
  }catch{res.writeHead(500);res.end('Local UAT failed');}
 }).listen(43135,'127.0.0.1',()=>console.log('Local contract UAT: http://127.0.0.1:43135/vetrina-telegram/'));
