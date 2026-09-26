@@ -18,9 +18,15 @@ ammette soltanto URL HTTPS t.me di messaggi e rifiuta query, inviti, profili,
 host contraffatti e righe aggiuntive. Il cambio prodotto non eredita il link.
 
 Node 24 `npm run verify`: 35/35 test, syntax e build PASS.
-UAT browser iPhone 430x932 e Mac 1440x900: non attestato; CUA era indisponibile
-all'ultimo controllo. Prima del merge verificare Ordina dal dettaglio, dock e
-misura, con post/senza post/cambio modello. Nessun invio vero durante i test.
+UAT locale browser iPhone 430x932 e Mac 1440x900: PASS dopo il ripristino CUA.
+La preview permette il campo opzionale nel DTO senza altre informazioni private.
+Cloudnova X: scelta EU42, verifica simulata, Ordina dock mobile e dettaglio Mac
+producono la bozza con SKU 3WE30410106 e post 9600, una sola volta.
+Esplora porta a Cloudvista2: scelta EU44 e Ordina su entrambi i viewport
+producono SKU 3ME30110818 senza il link precedente. Il ritorno conserva filtro
+On e due risultati. Console errori vuota; nessun invio/API cliente reale.
+Il test usa dati cliente letti dal CRM, link della query candidata e trasporto
+locale isolato: non equivale a rilascio o prova autenticata su iPhone fisico.
 
 PR separata dalla preparazione gioielli #11; non dipende da quelle modifiche.
 Merge Pages e migrazione produzione richiedono ciclo di rilascio approvato.

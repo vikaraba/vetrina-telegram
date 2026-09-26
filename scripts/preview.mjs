@@ -5,7 +5,7 @@ const root=new URL('../',import.meta.url);
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
 const raw=JSON.parse(await readFile(fixture,'utf8'));
-const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description}));
+const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
 const setup=`
 const originalFetch=window.fetch.bind(window);
 const params=new URLSearchParams(location.search);
