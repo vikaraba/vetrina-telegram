@@ -2,17 +2,18 @@
 export const blankFilters=()=>({brand:'all',category:'all',gender:'all',model:'all',color:'all',size:'all',minPrice:'',maxPrice:''});
 export const modelName=p=>(p.model||p.name||'').replace(/\s+da (uomo|donna)/gi,'').replace(/^Borsa /,'').replace(/^Portafoglio con catenella /,'').replace(/ con catenella/,'').trim();
 const categoryLabels={shoes:'Обувь','bags-accessories':'Сумки и аксессуары',bags:'Сумки',jewelry:'Украшения',watches:'Часы',clothing:'Одежда',accessories:'Аксессуары',rings:'Кольца','wedding-rings':'Обручальные кольца',bracelets:'Браслеты',earrings:'Серьги',necklaces:'Колье и цепочки',pendants:'Подвески','necklaces-pendants':'Колье и подвески',other:'Другие товары'};
-const categoryAliases={'wedding band':'wedding-rings',nozze:'wedding-rings',ring:'rings',bracelet:'bracelets',earrings:'earrings',pendants:'pendants',necklace:'necklaces',necklaces_and_pendants:'necklaces-pendants','steel watches':'watches',gioielleria:'jewelry',gioielli:'jewelry'};
+const categoryAliases={'wedding band':'wedding-rings',nozze:'wedding-rings',fede:'wedding-rings',ring:'rings',anello:'rings',bracelet:'bracelets',bracciale:'bracelets',earrings:'earrings',orecchini:'earrings',pendants:'pendants',pendente:'pendants',necklace:'necklaces',collana:'necklaces',necklaces_and_pendants:'necklaces-pendants','steel watches':'watches',gioielleria:'jewelry',gioielli:'jewelry'};
 // The legacy snapshot labels its bag/accessory category with a brand name.
 export const categoryOf=p=>p.category==='Louis Vuitton'?'bags-accessories':categoryAliases[String(p.category||'').trim().toLowerCase()]||p.category||'other';
 export const categoryLabel=value=>categoryLabels[value]||value;
-const jewelryBrand=p=>p.brand==='Cartier'||p.brand==='Van Cleef & Arpels';
+const jewelryBrand=p=>['Cartier','Van Cleef & Arpels','Messika'].includes(p.brand);
 // A collection/model is a filter, not the identity of a jewel. Keep the full
 // source product name (width, size and collection), translating only known nouns.
 export function productTitle(p){
   if(!jewelryBrand(p))return modelName(p);
   let text=p.name||p.model||'';
-  for(const [pattern,replacement] of [[/fede nuziale|wedding band/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelet/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
+  for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelet/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
+  if(p.brand==='Messika')for(const [pattern,replacement] of [[/con cordino/gi,'на шнурке'],[/con pavé/gi,'с паве'],[/con diamanti/gi,'с бриллиантами'],[/\bnero\b/gi,'чёрный'],[/\bgiallo\b/gi,'жёлтый'],[/\bturchese\b/gi,'бирюзовый']])text=text.replace(pattern,replacement);
   return text.trim();
 }
 export function jewelryMaterial(p){

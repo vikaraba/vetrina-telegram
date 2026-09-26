@@ -1,9 +1,9 @@
-import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260926-order-post';
+import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260926-jewelry';
 const tg=window.Telegram?.WebApp;
 tg?.ready();tg?.expand();
 const client=createStorefrontClient({tg});
 import {sizeValues,createSizeWheel,createLatestCheck} from './size-picker.mjs';
-import {blankFilters,modelName,productTitle,jewelryMaterial,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice} from './catalog-core.mjs';
+import {blankFilters,modelName,productTitle,jewelryMaterial,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice} from './catalog-core.mjs?v=20260926-jewelry';
 const $=s=>document.querySelector(s);
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const paths={sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>',filter:'<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="17" r="2" fill="currentColor"/>',arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',back:'<path d="M19 12H5m5-5-5 5 5 5"/>',photo:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 17 5-5 4 3 3-4 5 6"/><circle cx="8" cy="9" r="1"/>',zoom:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5M7 10h6m-3-3v6"/>',bag:'<path d="M5 7h14l1 14H4L5 7Zm3 0V5a4 4 0 0 1 8 0v2"/>',chat:'<path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2 1.5-5A8 8 0 1 1 20 11.5Z"/><path d="M7 10h9M7 14h6"/>',check:'<path d="m5 12 4 4L19 6"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/>',left:'<path d="m15 6-6 6 6 6"/>',right:'<path d="m9 6 6 6-6 6"/>'};

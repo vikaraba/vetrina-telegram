@@ -9,9 +9,10 @@ test('production entrypoint uses relative assets and Telegram SDK, no prototype 
   assert.doesNotMatch(html+app,/data.json|demo-result|Настройки демо|Прототип|simulated|scenario|prototype_/);
 });
 test('RUB only, non-positive or absent price remains unconfirmed',()=>{assert.match(app,/p.priceCurrency==='RUB'/);assert.match(app,/Цена уточняется/);assert.doesNotMatch(app,/priceEur/);});
-test('release entry and order module share a cache version, preview remains isolated',async()=>{
+test('release entry, order and catalog modules share a cache version, preview remains isolated',async()=>{
   const version=html.match(/src="\.\/app\.js\?v=([a-zA-Z0-9-]+)"/)[1];
   assert.ok(app.includes("from './storefront-api.mjs?v="+version+"'"));
+  assert.ok(app.includes("from './catalog-core.mjs?v="+version+"'"));
   const preview=await read('scripts/preview.mjs');
   assert.ok(preview.includes("await import('/vetrina-telegram/app.js?v="+version+"')"));
   assert.ok(preview.includes('src="./app.js?v='+version+'"'));

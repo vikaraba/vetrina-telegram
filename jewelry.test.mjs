@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {categoryOf,categoryLabel,productTitle,jewelryMaterial,blankFilters,filterProducts,facets,modelName} from './catalog-core.mjs';
+import {categoryOf,categoryLabel,productTitle,jewelryMaterial,blankFilters,filterProducts,facets,modelName,validPrice} from './catalog-core.mjs';
 import {contactUrl} from './storefront-api.mjs';
 const ring={id:1,brand:'Cartier',name:'1895 wedding band, 2.5 mm width',model:'1895',category:'Wedding band',reference:'TEST-RING',priceAmount:80000,priceCurrency:'RUB',description:'18K yellow gold (750/1000)',sizes:[{value:'52'}]};
 const pendant={id:2,brand:'Cartier',name:'Symbol pendant',model:'Symbols',category:'Pendants',reference:'TEST-PENDANT',priceAmount:75000,priceCurrency:'RUB',description:'18K white gold (750/1000)',sizes:[]};
@@ -34,4 +34,17 @@ test('jewelry contact keeps reference and ring size without shoe EU notation',()
   const u=new URL(contactUrl({...ring,name:productTitle(ring)},'52'));
   assert.equal(u.pathname,'/buyer_rome');assert.match(u.searchParams.get('text'),/Размер 52/);assert.doesNotMatch(u.searchParams.get('text'),/EU/);
   assert.match(u.searchParams.get('text'),/TEST-RING/);
+});
+test('Messika uses the same catalog and Russian jewelry rules without invented price or material',()=>{
+  const messika={id:4,brand:'Messika',name:'BRACCIALE CON CORDINO MESSIKA CARE(S) GIALLO',model:'Messika CARE(S)',category:'Bracciale',reference:'14659-WG',priceAmount:null,priceCurrency:null,description:'Bracciale con cordino giallo in oro bianco'};
+  assert.equal(productTitle(messika),'Браслет на шнурке MESSIKA CARE(S) жёлтый');
+  assert.equal(categoryOf(messika),'bracelets');
+  assert.equal(jewelryMaterial(messika),'Белое золото');
+  assert.equal(validPrice(messika),false);
+  assert.equal(filterProducts([ring,vca,messika],{...blankFilters(),brand:'Messika'},'браслет')[0].id,4);
+  assert.equal(filterProducts([messika],{...blankFilters(),minPrice:'1'}).length,0);
+  assert.equal(facets([ring,vca,messika],blankFilters(),'','brand').find(x=>x.value==='Messika').count,1);
+  for(const [category,expected] of [['Collana','necklaces'],['Bracciale','bracelets'],['Fede','wedding-rings'],['Anello','rings'],['Orecchini','earrings']])assert.equal(categoryOf({category}),expected);
+  assert.equal(jewelryMaterial({...messika,description:'Move Uno'}),'Уточним в личном сообщении');
+  assert.equal(modelName(messika),'Messika CARE(S)');
 });
