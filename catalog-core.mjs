@@ -47,3 +47,20 @@ export function setFilter(filters,key,value){
   return next;
 }
 export const activeCount=f=>Object.entries(f).filter(([k,v])=>k==='minPrice'||k==='maxPrice'?v!=='':v!=='all').length;
+
+// The authenticated catalog is the sole source of visible brands and counts.
+// Do not infer publication from a Telegram topic or prefetch product details.
+export function brandCollections(products){
+  const groups=new Map();
+  for(const product of products){
+    if(!product.brand?.trim())continue;
+    if(!groups.has(product.brand))groups.set(product.brand,{brand:product.brand,products:[],categories:new Set()});
+    const group=groups.get(product.brand);
+    group.products.push(product);group.categories.add(categoryOf(product));
+  }
+  return [...groups.values()].sort((a,b)=>a.brand.localeCompare(b.brand,'ru')).map(group=>({
+    brand:group.brand,count:group.products.length,
+    categories:[...group.categories].map(categoryLabel),
+    products:group.products,
+  }));
+}
