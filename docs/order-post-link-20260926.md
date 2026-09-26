@@ -31,5 +31,10 @@ locale isolato: non equivale a rilascio o prova autenticata su iPhone fisico.
 PR separata dalla preparazione gioielli #11; non dipende da quelle modifiche.
 Merge Pages e migrazione produzione richiedono ciclo di rilascio approvato.
 
+Rilascio autorizzato il 26 settembre. Entry app e import API usano il suffisso
+`20260926-order-post` per non riusare il modulo precedente dalla cache Telegram.
+I percorsi precedenti restano disponibili: nessuna rimozione di asset o export.
+Il test regressivo della versione cache porta il gate finale a 36 test.
+
 requested_by_tool: codex
 requested_by_task: 01a0214c-98c9-7852-9e6d-fd1410b15e31
