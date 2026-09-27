@@ -17,6 +17,14 @@ del repository CRM. Leggerlo prima di progettare o rilasciare. Se non è ancora
 su main, usare la PR di adozione collegata nel documento locale, senza fingere
 che la policy sia già distribuita.
 
+La policy prestazionale integra anche i contratti CRM
+[`RELEASE-UI-QUALITY.md`](https://github.com/vikaraba/CRM/blob/main/docs/RELEASE-UI-QUALITY.md)
+e [`UI-PROTOTYPE-FIDELITY-PROTOCOL.md`](https://github.com/vikaraba/CRM/blob/main/docs/UI-PROTOTYPE-FIDELITY-PROTOCOL.md):
+sei viewport, screenshot reali revisionati/hash, Safari/PWA e Telegram su
+iPhone fisico, inventario completo e approvazione delle variazioni visuali.
+Una PR documentale pronta non certifica queste prove né autorizza il merge
+che pubblica Pages. Non aggirare blocchi della piattaforma o del release owner.
+
 - Definire budget di caricamento, risposta al tap e payload prima del codice.
 - Misurare tutti i flussi descritti in `docs/performance-release.md` su iPhone
   e Mac, cache fredda/calda, candidato e versione precedente comparabili.
