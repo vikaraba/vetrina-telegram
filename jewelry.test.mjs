@@ -17,6 +17,14 @@ test('existing ON and LV titles and category semantics remain unchanged',()=>{
   for(const p of [{brand:'On',model:'Cloud 6 da uomo',category:'shoes'},{brand:'Louis Vuitton',name:'Borsa Neverfull',category:'Louis Vuitton'}])assert.equal(productTitle(p),modelName(p));
   assert.equal(categoryOf({category:'Louis Vuitton'}),'bags-accessories');
 });
+test('Cartier chain bracelet is Russian in the card, search and order without changing source identity',()=>{
+  const p={...pendant,category:'Bracelet',name:'LOVE bracelet, on chain',reference:'TEST-CHAIN'};
+  assert.equal(productTitle(p),'LOVE Браслет, на цепочке');
+  assert.equal(filterProducts([p],blankFilters(),'на цепочке')[0].id,p.id);
+  const draft=new URL(contactUrl({...p,name:productTitle(p)})).searchParams.get('text');
+  assert.match(draft,/LOVE Браслет, на цепочке/);assert.match(draft,/TEST-CHAIN/);
+  assert.doesNotMatch(draft,/on chain/);assert.equal(p.name,'LOVE bracelet, on chain');
+});
 test('material uses explicit source facts only, never marketing prose or invented purity',()=>{
   assert.equal(jewelryMaterial(ring),'Жёлтое золото');assert.equal(jewelryMaterial(vca),'Розовое золото');
   assert.equal(jewelryMaterial({...ring,description:'A precious symbol of love'}),'Уточним в личном сообщении');

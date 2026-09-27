@@ -17,6 +17,7 @@ export function productTitle(p){
   if(!jewelryBrand(p))return modelName(p);
   let text=p.name||p.model||'';
   for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelet/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
+  text=text.replace(/\bon chain\b/gi,'на цепочке');
   if(p.brand==='Messika')for(const [pattern,replacement] of [[/con cordino/gi,'на шнурке'],[/con pavé/gi,'с паве'],[/con diamanti/gi,'с бриллиантами'],[/\bnero\b/gi,'чёрный'],[/\bgiallo\b/gi,'жёлтый'],[/\bturchese\b/gi,'бирюзовый']])text=text.replace(pattern,replacement);
   return text.trim();
 }

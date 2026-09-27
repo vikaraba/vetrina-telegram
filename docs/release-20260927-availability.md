@@ -47,3 +47,19 @@ do not erase restock consent, CRM rows, images, or Telegram history.
 Catalog discovery agent cadence proposed6hours, awaiting owner confirmation.
 No heartbeat has been activated. Existing cloud inventory worker is a different
 component: it refreshes previously approved ON models, not new brand discovery.
+
+## Cartier pilot presentation check (27 September)
+
+The separate CRM category work (PR598) prepared three unpublished Cartier
+records with24official images. Its new prices/translated descriptions are
+local fixture proposals, not applied runtime data: the old import RPC failed
+its source-neutral FX constraints and rolled back. Do not activate these
+products from a successful preview alone.
+
+At430x932 the actual frontend, isolated preview transport, exercised gallery
+1/9→9/9, zoom150%, close/focus return, explore Cartier and a simulated order
+to buyer_rome. This exposed the untranslated phrase `on chain`; the customer
+title, Russian search and order now render `на цепочке`, with source name,
+reference, layout and pricing untouched. A regression covers all three uses.
+The full verification has60tests and8public assets; this does not supersede
+the blocking final-SHA, physical-device and performance evidence above.
