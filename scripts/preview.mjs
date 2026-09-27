@@ -9,11 +9,14 @@ if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid local UAT
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
 const raw=JSON.parse(await readFile(fixture,'utf8'));
-const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
+const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl,sizeAvailability})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl,sizeAvailability}));
 const setup=`
 const originalFetch=window.fetch.bind(window);
 const params=new URLSearchParams(location.search);
 let data=await originalFetch('/__qa/data').then(r=>r.json());
+// Contract fixtures only: explicitly simulate a fresh observation, not live ON stock.
+data=data.map(p=>({...p,sizeAvailability:(p.sizeAvailability||[]).map(s=>({...s,observedAt:new Date().toISOString(),status:s.status==='on_order'?'available':s.status}))}));
+const subscriptions=new Map();
 if(params.get('catalog')==='empty')data=[];
 let catalogAttempts=0,telegramBack=()=>{};
 const log=document.createElement('pre');log.id='qa-log';log.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font:11px monospace;padding:12px';document.body.append(log);
@@ -43,12 +46,25 @@ window.fetch=async(url,options={})=>{
  }
  if(action==='size-interest')return answer({status:params.get('outcome')||'available',checkId:'00000000-0000-4000-8000-000000000001'},202);
  if(action==='size-status')return answer({status:'unknown'});
+ if(action==='on-availability'){
+   const p=data.find(p=>p.id===Number(u.searchParams.get('id')));
+   if(!p)return answer({},404);
+   if(params.get('availability')==='error')return answer({failed:true});
+   return answer({sizes:params.get('availability')==='unknown'?[]:p.sizeAvailability,subscriptions:subscriptions.get(p.id)||[]});
+ }
+ if(action==='on-restock'){
+   if(params.get('restock')==='permission')return answer({},403);
+   if(params.get('restock')==='error')return answer({},500);
+   const rows=(subscriptions.get(body.productId)||[]).filter(s=>s.size!==body.size);
+   if(body.action==='subscribe')rows.push({size:body.size,status:'active'});
+   subscriptions.set(body.productId,rows);return answer({subscriptions:rows});
+ }
  if(action==='interaction')return answer({ok:true});
  throw Error('Unmocked UAT request');
 };
-await import('/vetrina-telegram/app.js?v=20260927-jewelry');
+await import('/vetrina-telegram/app.js?v=20260927-availability');
 `;
-const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs']);
+const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs','size-filter.mjs','on-availability.mjs']);
 http.createServer(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  res.setHeader('Content-Security-Policy',"default-src 'self'; img-src 'self' https://dbgcpgteuwkxqjgvppfp.supabase.co; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'");
@@ -60,7 +76,7 @@ http.createServer(async(req,res)=>{
    const name=path.replace(/^\/vetrina-telegram\//,'')||'index.html';
    if(!assets.has(name)){res.writeHead(404);res.end();return;}
    let content=await readFile(new URL(name,root),'utf8');
-   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260927-jewelry"','src="/__qa/setup.js"');
+   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260927-availability"','src="/__qa/setup.js"');
    res.setHeader('Content-Type',name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.css')?'text/css':'text/javascript');res.end(content);
  }catch{res.writeHead(500);res.end('Local UAT failed');}
 }).listen(port,'127.0.0.1',()=>console.log('Local staging UAT: http://127.0.0.1:'+port+'/vetrina-telegram/ · assets: '+root.pathname));

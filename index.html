@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f8f7f3">
   <title>Каталог</title>
-  <link rel="stylesheet" href="./style.css?v=20260927-jewelry">
+  <link rel="stylesheet" href="./style.css?v=20260927-availability">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script type="module" src="./app.js?v=20260927-jewelry"></script>
+  <script type="module" src="./app.js?v=20260927-availability"></script>
 </head>
 <body>
   <main id="app"><div class="loading-state" role="status"><span class="spinner"></span>Загружаем каталог…</div></main>
@@ -23,5 +23,12 @@
   </dialog>
   <dialog id="zoom-dialog" class="zoom-dialog" aria-label="Просмотр фотографий"><div class="zoom-toolbar"><span id="zoom-caption"></span><button class="icon-button" data-close="zoom-dialog" aria-label="Закрыть увеличение">×</button></div><div id="zoom-stage"><img id="zoom-image" alt=""></div><div class="zoom-controls"><button class="icon-button" id="zoom-minus" aria-label="Уменьшить фото">−</button><button id="zoom-reset" aria-label="Сбросить масштаб">100%</button><button class="icon-button" id="zoom-plus" aria-label="Увеличить фото">+</button><span>Двойное касание — увеличить</span></div></dialog>
   <div id="announcement" class="sr-only" aria-live="polite"></div>
+  <dialog id="sizes-filter-dialog" class="sheet sizes-filter-dialog" aria-labelledby="sizes-filter-title">
+    <form method="dialog" class="sheet-shell">
+      <div class="sheet-head"><div><h2 id="sizes-filter-title">Размеры · EU</h2><p class="size-filter-intro">Можно выбрать несколько</p></div><button class="icon-button" value="cancel" aria-label="Закрыть фильтр размеров">×</button></div>
+      <div class="sheet-content"><p class="size-filter-rule">Покажем модели хотя бы с одним из выбранных размеров по последней проверке.</p><div id="sizes-filter-options" class="sizes-filter-options" role="group" aria-label="Размеры EU"></div><p id="sizes-filter-empty" hidden>Нет размеров по текущим фильтрам. Измените модель или цену.</p><p id="sizes-filter-observed" class="sizes-filter-observed"></p></div>
+      <div class="sheet-bottom"><button type="button" id="sizes-filter-reset" class="text-button">Сбросить</button><button type="button" id="sizes-filter-apply" class="primary">Показать</button></div>
+    </form>
+  </dialog>
 </body>
 </html>

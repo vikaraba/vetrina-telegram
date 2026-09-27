@@ -17,10 +17,30 @@ test('existing ON and LV titles and category semantics remain unchanged',()=>{
   for(const p of [{brand:'On',model:'Cloud 6 da uomo',category:'shoes'},{brand:'Louis Vuitton',name:'Borsa Neverfull',category:'Louis Vuitton'}])assert.equal(productTitle(p),modelName(p));
   assert.equal(categoryOf({category:'Louis Vuitton'}),'bags-accessories');
 });
+test('Cartier chain bracelet is Russian in the card, search and order without changing source identity',()=>{
+  const p={...pendant,category:'Bracelet',name:'LOVE bracelet, on chain',reference:'TEST-CHAIN'};
+  assert.equal(productTitle(p),'LOVE Браслет, на цепочке');
+  assert.equal(filterProducts([p],blankFilters(),'на цепочке')[0].id,p.id);
+  const draft=new URL(contactUrl({...p,name:productTitle(p)})).searchParams.get('text');
+  assert.match(draft,/LOVE Браслет, на цепочке/);assert.match(draft,/TEST-CHAIN/);
+  assert.doesNotMatch(draft,/on chain/);assert.equal(p.name,'LOVE bracelet, on chain');
+});
 test('material uses explicit source facts only, never marketing prose or invented purity',()=>{
   assert.equal(jewelryMaterial(ring),'Жёлтое золото');assert.equal(jewelryMaterial(vca),'Розовое золото');
   assert.equal(jewelryMaterial({...ring,description:'A precious symbol of love'}),'Уточним в личном сообщении');
   assert.equal(jewelryMaterial({...ring,brand:'Louis Vuitton'}),null);
+});
+test('Russian material facts stay visible for jewelry and watches without inferring from photos or names',()=>{
+  for(const [description,expected] of [
+    ['Розовое золото 750 пробы (18K). Длина цепочки: 16 или 18 см.','Розовое золото'],
+    ['Желтое золото.','Жёлтое золото'],['Жёлтое золото.','Жёлтое золото'],
+    ['Белое золото.','Белое золото'],['Платина.','Платина'],
+    ['Стальной корпус 33,7 × 25,5 мм. Чёрный ремешок.','Сталь'],
+    ['Материал: сталь.','Сталь'],['Белое золото и розовое золото.','Розовое золото · Белое золото'],
+  ])assert.equal(jewelryMaterial({...ring,description}),expected);
+  for(const description of ['', 'Золотистый цвет.', 'Платиновый оттенок.', 'Кристальный блеск.'])
+    assert.equal(jewelryMaterial({...ring,name:'Rose gold watch',description}),'Уточним в личном сообщении');
+  assert.equal(jewelryMaterial({...ring,description:'Розовое золото 750 пробы (18K).'}).includes('750'),false);
 });
 test('Russian search, exact reference, category, brand and budget filters combine',()=>{
   const products=[ring,pendant,vca];

@@ -1,4 +1,5 @@
 // Data-driven catalog rules. No API calls and no assumptions about stock.
+import {selectedSizes,matchesSizes} from './size-filter.mjs';
 export const blankFilters=()=>({brand:'all',category:'all',gender:'all',model:'all',color:'all',size:'all',minPrice:'',maxPrice:''});
 export const modelName=p=>(p.model||p.name||'').replace(/\s+da (uomo|donna)/gi,'').replace(/^Borsa /,'').replace(/^Portafoglio con catenella /,'').replace(/ con catenella/,'').trim();
 const categoryLabels={shoes:'Обувь','bags-accessories':'Сумки и аксессуары',bags:'Сумки',jewelry:'Украшения',watches:'Часы',clothing:'Одежда',accessories:'Аксессуары',rings:'Кольца','wedding-rings':'Обручальные кольца',bracelets:'Браслеты',earrings:'Серьги',necklaces:'Колье и цепочки',pendants:'Подвески','necklaces-pendants':'Колье и подвески',other:'Другие товары'};
@@ -16,13 +17,14 @@ export function productTitle(p){
   if(!jewelryBrand(p))return modelName(p);
   let text=p.name||p.model||'';
   for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelet/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
+  text=text.replace(/\bon chain\b/gi,'на цепочке');
   if(p.brand==='Messika')for(const [pattern,replacement] of [[/con cordino/gi,'на шнурке'],[/con pavé/gi,'с паве'],[/con diamanti/gi,'с бриллиантами'],[/\bnero\b/gi,'чёрный'],[/\bgiallo\b/gi,'жёлтый'],[/\bturchese\b/gi,'бирюзовый']])text=text.replace(pattern,replacement);
   return text.trim();
 }
 export function jewelryMaterial(p){
   if(!jewelryBrand(p))return null;
   const text=String(p.description||'');
-  const facts=[[/oro giallo|yellow gold/i,'Жёлтое золото'],[/oro rosa|rose gold|pink gold/i,'Розовое золото'],[/oro bianco|white gold/i,'Белое золото'],[/platino|platinum/i,'Платина'],[/stainless steel|\bsteel\b|acciaio/i,'Сталь']];
+  const facts=[[/oro giallo|yellow gold|ж[её]лтое золото/i,'Жёлтое золото'],[/oro rosa|rose gold|pink gold|розовое золото/i,'Розовое золото'],[/oro bianco|white gold|белое золото/i,'Белое золото'],[/platino|platinum|(?:^|[^\p{L}])платина(?:$|[^\p{L}])/iu,'Платина'],[/stainless steel|\bsteel\b|acciaio|(?:^|[^\p{L}])сталь(?:$|[^\p{L}])|стальной корпус/iu,'Сталь']];
   // Never label the whole marketing description as a material or infer purity.
   return facts.filter(([pattern])=>pattern.test(text)).map(([,label])=>label).join(' · ')||'Уточним в личном сообщении';
 }
@@ -45,6 +47,7 @@ export function valuesFor(p,key){
 export function filterProducts(products,filters=blankFilters(),query='',exclude=''){
   const terms=searchTerms(query);
   return products.filter(p=>{
+    if(exclude!=='selectedSizes'&&!matchesSizes(p,selectedSizes(filters)))return false;
     const haystack=norm([p.name,productTitle(p),p.brand,p.reference,modelName(p),p.color,colorLabel(p.color),categoryLabel(categoryOf(p))].join(' '));
     if(!terms.every(term=>haystack.includes(term)))return false;
     for(const key of ['brand','category','gender','model','color','size'])if(key!==exclude&&filters[key]!=='all'&&!valuesFor(p,key).includes(filters[key]))return false;
@@ -65,9 +68,10 @@ export function facets(products,filters,query,key){
 export function setFilter(filters,key,value){
   const next={...filters,[key]:value};
   if(key==='brand'||key==='category')for(const child of ['model','color','size'])next[child]='all';
+  if((key==='brand'||key==='category')&&'selectedSizes' in next)next.selectedSizes=[];
   return next;
 }
-export const activeCount=f=>Object.entries(f).filter(([k,v])=>k==='minPrice'||k==='maxPrice'?v!=='':v!=='all').length;
+export const activeCount=f=>Object.entries(f).filter(([k,v])=>k==='selectedSizes'?selectedSizes(f).length>0:k==='minPrice'||k==='maxPrice'?v!=='':v!=='all').length;
 
 // The authenticated catalog is the sole source of visible brands and counts.
 // Do not infer publication from a Telegram topic or prefetch product details.

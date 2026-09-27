@@ -1,7 +1,7 @@
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const root=new URL('../',import.meta.url);
-export const files=['index.html','style.css','app.js','catalog-core.mjs','size-picker.mjs','storefront-api.mjs'];
+export const files=['index.html','style.css','app.js','catalog-core.mjs','size-picker.mjs','storefront-api.mjs','size-filter.mjs','on-availability.mjs'];
 await mkdir(new URL('dist/',root),{recursive:true});
 const hashes={};
 for(const file of files){
