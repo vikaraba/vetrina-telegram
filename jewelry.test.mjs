@@ -30,6 +30,18 @@ test('material uses explicit source facts only, never marketing prose or invente
   assert.equal(jewelryMaterial({...ring,description:'A precious symbol of love'}),'Уточним в личном сообщении');
   assert.equal(jewelryMaterial({...ring,brand:'Louis Vuitton'}),null);
 });
+test('Russian material facts stay visible for jewelry and watches without inferring from photos or names',()=>{
+  for(const [description,expected] of [
+    ['Розовое золото 750 пробы (18K). Длина цепочки: 16 или 18 см.','Розовое золото'],
+    ['Желтое золото.','Жёлтое золото'],['Жёлтое золото.','Жёлтое золото'],
+    ['Белое золото.','Белое золото'],['Платина.','Платина'],
+    ['Стальной корпус 33,7 × 25,5 мм. Чёрный ремешок.','Сталь'],
+    ['Материал: сталь.','Сталь'],['Белое золото и розовое золото.','Розовое золото · Белое золото'],
+  ])assert.equal(jewelryMaterial({...ring,description}),expected);
+  for(const description of ['', 'Золотистый цвет.', 'Платиновый оттенок.', 'Кристальный блеск.'])
+    assert.equal(jewelryMaterial({...ring,name:'Rose gold watch',description}),'Уточним в личном сообщении');
+  assert.equal(jewelryMaterial({...ring,description:'Розовое золото 750 пробы (18K).'}).includes('750'),false);
+});
 test('Russian search, exact reference, category, brand and budget filters combine',()=>{
   const products=[ring,pendant,vca];
   assert.equal(filterProducts(products,blankFilters(),'подвеска')[0].id,2);

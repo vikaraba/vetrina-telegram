@@ -24,7 +24,7 @@ export function productTitle(p){
 export function jewelryMaterial(p){
   if(!jewelryBrand(p))return null;
   const text=String(p.description||'');
-  const facts=[[/oro giallo|yellow gold/i,'Жёлтое золото'],[/oro rosa|rose gold|pink gold/i,'Розовое золото'],[/oro bianco|white gold/i,'Белое золото'],[/platino|platinum/i,'Платина'],[/stainless steel|\bsteel\b|acciaio/i,'Сталь']];
+  const facts=[[/oro giallo|yellow gold|ж[её]лтое золото/i,'Жёлтое золото'],[/oro rosa|rose gold|pink gold|розовое золото/i,'Розовое золото'],[/oro bianco|white gold|белое золото/i,'Белое золото'],[/platino|platinum|(?:^|[^\p{L}])платина(?:$|[^\p{L}])/iu,'Платина'],[/stainless steel|\bsteel\b|acciaio|(?:^|[^\p{L}])сталь(?:$|[^\p{L}])|стальной корпус/iu,'Сталь']];
   // Never label the whole marketing description as a material or infer purity.
   return facts.filter(([pattern])=>pattern.test(text)).map(([,label])=>label).join(' · ')||'Уточним в личном сообщении';
 }

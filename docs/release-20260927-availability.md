@@ -63,3 +63,19 @@ title, Russian search and order now render `на цепочке`, with source na
 reference, layout and pricing untouched. A regression covers all three uses.
 The full verification has60tests and8public assets; this does not supersede
 the blocking final-SHA, physical-device and performance evidence above.
+
+Further local review found Russian source facts were not recognized by the
+existing material field: explicit `Розовое золото` and `Стальной корпус`
+incorrectly rendered the fallback. The material parser now accepts those
+Russian facts (plus yellow/white gold, platinum and steel) without inventing
+purity, price, color or availability. Layout and source descriptions are unchanged.
+The complete verification now has61passing tests and8public assets.
+
+Local isolated browser checks exercised the watches category filter, exact
+reference search `WSTA0137`, opening that model and its simulated order to
+buyer_rome without a shoe size or external message. At320x568 the page had
+no horizontal overflow; navigation targets were57px and order50px high.
+At390x844 the opened bracelet details showed the explicit Russian material.
+At440x956 the ninth official watch gallery photo and dark zoom dialog were
+reviewed visually. These are preliminary emulated checks, not a physical
+iPhone test, complete final-SHA UAT or proof of runtime product activation.
