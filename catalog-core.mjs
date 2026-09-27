@@ -1,4 +1,5 @@
 // Data-driven catalog rules. No API calls and no assumptions about stock.
+import {selectedSizes,matchesSizes} from './size-filter.mjs';
 export const blankFilters=()=>({brand:'all',category:'all',gender:'all',model:'all',color:'all',size:'all',minPrice:'',maxPrice:''});
 export const modelName=p=>(p.model||p.name||'').replace(/\s+da (uomo|donna)/gi,'').replace(/^Borsa /,'').replace(/^Portafoglio con catenella /,'').replace(/ con catenella/,'').trim();
 const categoryLabels={shoes:'Обувь','bags-accessories':'Сумки и аксессуары',bags:'Сумки',jewelry:'Украшения',watches:'Часы',clothing:'Одежда',accessories:'Аксессуары',rings:'Кольца','wedding-rings':'Обручальные кольца',bracelets:'Браслеты',earrings:'Серьги',necklaces:'Колье и цепочки',pendants:'Подвески','necklaces-pendants':'Колье и подвески',other:'Другие товары'};
@@ -45,6 +46,7 @@ export function valuesFor(p,key){
 export function filterProducts(products,filters=blankFilters(),query='',exclude=''){
   const terms=searchTerms(query);
   return products.filter(p=>{
+    if(exclude!=='selectedSizes'&&!matchesSizes(p,selectedSizes(filters)))return false;
     const haystack=norm([p.name,productTitle(p),p.brand,p.reference,modelName(p),p.color,colorLabel(p.color),categoryLabel(categoryOf(p))].join(' '));
     if(!terms.every(term=>haystack.includes(term)))return false;
     for(const key of ['brand','category','gender','model','color','size'])if(key!==exclude&&filters[key]!=='all'&&!valuesFor(p,key).includes(filters[key]))return false;
@@ -65,9 +67,10 @@ export function facets(products,filters,query,key){
 export function setFilter(filters,key,value){
   const next={...filters,[key]:value};
   if(key==='brand'||key==='category')for(const child of ['model','color','size'])next[child]='all';
+  if((key==='brand'||key==='category')&&'selectedSizes' in next)next.selectedSizes=[];
   return next;
 }
-export const activeCount=f=>Object.entries(f).filter(([k,v])=>k==='minPrice'||k==='maxPrice'?v!=='':v!=='all').length;
+export const activeCount=f=>Object.entries(f).filter(([k,v])=>k==='selectedSizes'?selectedSizes(f).length>0:k==='minPrice'||k==='maxPrice'?v!=='':v!=='all').length;
 
 // The authenticated catalog is the sole source of visible brands and counts.
 // Do not infer publication from a Telegram topic or prefetch product details.

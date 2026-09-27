@@ -1,9 +1,11 @@
-import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260927-jewelry';
+import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260927-availability';
 const tg=window.Telegram?.WebApp;
 tg?.ready();tg?.expand();
 const client=createStorefrontClient({tg});
 import {sizeValues,createSizeWheel,createLatestCheck} from './size-picker.mjs';
-import {blankFilters,modelName,productTitle,jewelryMaterial,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice,brandCollections} from './catalog-core.mjs?v=20260927-jewelry';
+import {selectedSizes,sizeDisplay,sizeFacets,knownOrderableSizes} from './size-filter.mjs';
+import {createOnAvailability} from './on-availability.mjs';
+import {blankFilters,modelName,productTitle,jewelryMaterial,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice,brandCollections} from './catalog-core.mjs?v=20260927-availability';
 const $=s=>document.querySelector(s);
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const paths={sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>',filter:'<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="17" r="2" fill="currentColor"/>',arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',back:'<path d="M19 12H5m5-5-5 5 5 5"/>',photo:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 17 5-5 4 3 3-4 5 6"/><circle cx="8" cy="9" r="1"/>',zoom:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5M7 10h6m-3-3v6"/>',bag:'<path d="M5 7h14l1 14H4L5 7Zm3 0V5a4 4 0 0 1 8 0v2"/>',chat:'<path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2 1.5-5A8 8 0 1 1 20 11.5Z"/><path d="M7 10h9M7 14h6"/>',check:'<path d="m5 12 4 4L19 6"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/>',left:'<path d="m15 6-6 6 6 6"/>',right:'<path d="m9 6 6 6-6 6"/>'};
@@ -78,6 +80,7 @@ async function showCatalog({reset=false,restore=false,push=true,brand=null}={}){
   if(push)history.pushState({catalog:true,explored:true},'',navigationUrl());
   $('#app').innerHTML=`<section class="catalog" aria-label="Каталог"><nav class="catalog-nav" aria-label="Навигация по каталогу"><button id="back-home" class="back-button">${icon('back')}<span>Бренды</span></button><h1 id="catalog-title">${escapeHtml(state.filters.brand==='all'?'Все товары':state.filters.brand)}</h1></nav><div class="catalog-toolbar"><label class="search-field">${icon('search')}<span class="sr-only">Поиск по бренду, модели или артикулу</span><input type="search" id="search" placeholder="Бренд, модель, артикул" value="${escapeHtml(state.query)}" autocomplete="off"></label><button id="filters-open" class="filter-button" aria-label="Открыть фильтры">${icon('filter')}<span class="filter-text">Фильтры</span><span id="filter-badge" class="filter-count" hidden></span></button></div><div class="brand-strip" id="brand-strip" aria-label="Бренды"></div><div class="active-filters" id="active-filters" aria-label="Выбранные фильтры"></div><div class="catalog-meta"><span id="result-count" aria-live="polite"></span><label class="sort-label"><select id="sort" aria-label="Сортировка">${[['curated','По умолчанию'],['low','Сначала дешевле'],['high','Сначала дороже'],['name','По названию']].map(([key,label])=>`<option value="${key}" ${state.sort===key?'selected':''}>${label}</option>`).join('')}</select></label></div><div class="product-grid" id="products"></div><div class="more-wrap" id="more-wrap"></div></section>`;
   $('#back-home').onclick=()=>showHome();
+  $('#brand-strip').insertAdjacentHTML('afterend','<section id="on-size-filter" class="on-size-filter" aria-label="Размеры ON" hidden></section>');
   $('#search').oninput=e=>{state.query=e.target.value;state.limit=12;renderResults();};
   $('#search').onchange=()=>event('catalog_search',{query:state.query,resultCount:results().length});
   $('#sort').onchange=e=>{state.sort=e.target.value;renderResults();};$('#filters-open').onclick=openFilters;
@@ -89,12 +92,39 @@ function renderFilterSummary(){
   const brandCounts=new Map(brands.map(brand=>[brand,filterProducts(state.products,setFilter(state.filters,'brand',brand),state.query).length]));
   $('#brand-strip').innerHTML=[['all','Все'],...brands.map(b=>[b,b])].map(([value,label])=>`<button class="brand-tab" data-brand="${escapeHtml(value)}" aria-pressed="${state.filters.brand===value}">${escapeHtml(label)}${value==='all'?'':`<span>${brandCounts.get(value)||0}</span>`}</button>`).join('');
   document.querySelectorAll('[data-brand]').forEach(b=>b.onclick=()=>{state.filters=setFilter(state.filters,'brand',b.dataset.brand);state.limit=12;event('catalog_filter',{filters:state.filters});renderResults();});
-  const chips=Object.entries(state.filters).filter(([key,value])=>value!==''&&value!=='all'&&key!=='brand');
+  const chips=Object.entries(state.filters).filter(([key,value])=>value!==''&&value!=='all'&&key!=='brand'&&key!=='selectedSizes');
   const label=(key,value)=>key==='minPrice'?`От ${Number(value).toLocaleString('ru')} ₽`:key==='maxPrice'?`До ${Number(value).toLocaleString('ru')} ₽`:key==='size'?`Размер ${value}`:facetLabel(key,value);
   $('#active-filters').hidden=chips.length===0;
   $('#active-filters').innerHTML=chips.map(([key,value])=>`<button class="filter-chip" data-remove="${key}" aria-label="Убрать фильтр: ${escapeHtml(label(key,value))}">${escapeHtml(label(key,value))}<span aria-hidden="true">×</span></button>`).join('');
   document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{const key=b.dataset.remove;state.filters[key]=blankFilters()[key];state.limit=12;renderResults();});
+  renderOnSizeFilter();
 }
+let sizeFilterDraft=[];
+function sizePool(){return filterProducts(state.products,state.filters,state.query,'selectedSizes').filter(p=>p.sourceId==='on_running_it');}
+function renderOnSizeFilter(){
+  const el=$('#on-size-filter');if(!el)return;
+  const visible=state.filters.brand==='On';el.hidden=!visible;if(!visible){el.innerHTML='';return;}
+  const values=selectedSizes(state.filters);
+  el.innerHTML=`<div class="on-size-toolbar"><button id="sizes-filter-open" class="sizes-filter-open" aria-haspopup="dialog" aria-controls="sizes-filter-dialog">Размеры <span>EU${values.length?' · '+values.length:''}</span>${icon('filter')}</button><p>По последней проверке</p></div>${values.length?`<div class="on-size-selections" aria-label="Выбранные размеры">${values.map(s=>`<button class="size-selection-chip" data-remove-size="${s}" aria-label="Убрать размер ${sizeDisplay(s)}">${sizeDisplay(s)} <span aria-hidden="true">×</span></button>`).join('')}<button class="text-button" id="sizes-clear">Сбросить размеры</button></div>`:''}`;
+  $('#sizes-filter-open').onclick=openSizeFilter;
+  const apply=values=>{state.filters={...state.filters,selectedSizes:values};state.limit=12;event('catalog_filter',{filters:state.filters,sizeMatch:'any',availabilityBasis:'last_observed'});renderResults();};
+  document.querySelectorAll('[data-remove-size]').forEach(b=>b.onclick=()=>apply(values.filter(v=>v!==b.dataset.removeSize)));
+  if($('#sizes-clear'))$('#sizes-clear').onclick=()=>apply([]);
+}
+function openSizeFilter(){sizeFilterDraft=selectedSizes(state.filters);renderSizeFilterOptions();$('#sizes-filter-dialog').showModal();}
+function renderSizeFilterOptions(focus){
+  const pool=sizePool(),options=sizeFacets(pool,sizeFilterDraft);
+  $('#sizes-filter-options').innerHTML=options.map(({value,count})=>`<label class="size-filter-option${count===0&&!sizeFilterDraft.includes(value)?' is-empty':''}"><input type="checkbox" value="${value}" aria-label="EU ${sizeDisplay(value)}" ${sizeFilterDraft.includes(value)?'checked':''} ${!count&&!sizeFilterDraft.includes(value)?'disabled':''}><span class="size-option-face"><strong>${sizeDisplay(value)}</strong><small>${count?count+' '+productNoun(count):'нет'}</small><span class="size-option-check" aria-hidden="true">✓</span></span></label>`).join('');
+  $('#sizes-filter-empty').hidden=options.length>0;
+  const dates=pool.flatMap(p=>(p.sizeAvailability||[]).filter(s=>knownOrderableSizes(p).includes(s.value)).map(s=>Date.parse(s.observedAt))).filter(Number.isFinite);
+  const date=n=>new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short'}).format(n);
+  $('#sizes-filter-observed').textContent=dates.length?'Данные: '+date(Math.min(...dates))+' — '+date(Math.max(...dates))+'. Актуальное наличие проверим при выборе размера.':'Нет подтверждённых данных по текущим фильтрам.';
+  $('#sizes-filter-apply').textContent='Показать · '+results({...state.filters,selectedSizes:sizeFilterDraft}).length;
+  document.querySelectorAll('#sizes-filter-options input').forEach(input=>input.onchange=()=>{sizeFilterDraft=input.checked?[...sizeFilterDraft,input.value]:sizeFilterDraft.filter(x=>x!==input.value);renderSizeFilterOptions(input.value);});
+  if(focus)document.querySelector('#sizes-filter-options input[value="'+focus+'"]')?.focus({preventScroll:true});
+}
+$('#sizes-filter-reset').onclick=()=>{sizeFilterDraft=[];renderSizeFilterOptions();};
+$('#sizes-filter-apply').onclick=()=>{state.filters={...state.filters,selectedSizes:[...sizeFilterDraft]};state.limit=12;$('#sizes-filter-dialog').close();event('catalog_filter',{filters:state.filters,sizeMatch:'any',availabilityBasis:'last_observed'});renderResults();announce(results().length+' '+productNoun(results().length));};
 function renderResults(){
   $('#catalog-title').textContent=state.filters.brand==='all'?'Все товары':state.filters.brand;
   const list=results(),shown=list.slice(0,state.limit);
@@ -148,7 +178,16 @@ async function showProduct(id,{push=true}={}){
   $('#detail-contact').onclick=contact;$('#dock-contact').onclick=contact;$('#gallery-open').onclick=openZoom;$('#gallery-zoom').onclick=openZoom;
   if($('#gallery-next'))$('#gallery-next').onclick=()=>setImage(state.imageIndex+1);if($('#gallery-prev'))$('#gallery-prev').onclick=()=>setImage(state.imageIndex-1);
   document.querySelectorAll('[data-image]').forEach(b=>b.onclick=()=>setImage(Number(b.dataset.image)));
-  if($('#size-open'))$('#size-open').onclick=openSizePicker;updateOrderActions();
+  if($('#size-open')){
+    $('#size-open').onclick=openSizePicker;
+    if(isOnSizeProduct(p)){
+      $('#selected-size').textContent='Проверить доступные размеры';
+      $('#size-open').setAttribute('aria-controls','on-availability-dialog');
+      $('.detail-page').classList.add('on-two-actions');
+      $('.product-info .price-note').insertAdjacentElement('afterend',$('#size-open'));
+      $('.mobile-dock').classList.add('on-size-order-dock');
+    }
+  }updateOrderActions();
   let touchX=null;$('#gallery-open').addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;},{passive:true});$('#gallery-open').addEventListener('touchend',e=>{if(touchX!==null&&Math.abs(e.changedTouches[0].clientX-touchX)>45)setImage(state.imageIndex+(e.changedTouches[0].clientX<touchX?1:-1));touchX=null;},{passive:true});
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -158,6 +197,16 @@ const sizeCheck=createLatestCheck();
 let pickerProductId=null;
 function closeOverlays(){document.querySelectorAll('dialog[open]').forEach(d=>d.close());}
 function sizeLabel(value){return (categoryOf(state.product)==='shoes'?'EU ':'')+value;}
+const isOnSizeProduct=p=>p?.sourceId==='on_running_it';
+const onSizes=createOnAvailability({
+  isCurrent:id=>state.product?.id===id,
+  cover,title,money,client,tg,
+  select(product,row){
+    state.size=row.value;state.check='idle';
+    $('#size-open .size-trigger-end').innerHTML='EU '+sizeDisplay(row.value)+' '+icon('right');
+    void checkSize();
+  }
+});
 const wheel=createSizeWheel({
   list:$('#size-wheel'),
   onChange(value){
@@ -168,6 +217,7 @@ const wheel=createSizeWheel({
 });
 function openSizePicker(){
   const p=state.product,values=sizeValues(p);if(!p||!values.length)return;
+  if(isOnSizeProduct(p)){onSizes.open(p,state.size);return;}
   pickerProductId=p.id;
   $('#size-context').innerHTML=`<img src="${cover(p)}" alt="" width="64" height="64"><div><strong>${escapeHtml(title(p))}</strong><span>${escapeHtml(p.brand)} · ${money(p)}</span></div>`;
   $('#size-unit').textContent=categoryOf(p)==='shoes'?'EU':'Размер';
@@ -189,7 +239,7 @@ $('#size-up').onclick=()=>wheel.move(-1);$('#size-down').onclick=()=>wheel.move(
 $('#size-dialog').addEventListener('close',()=>{wheel.cancel();pickerProductId=null;});
 function updateOrderActions(){
   const hasSizes=sizeValues(state.product).length>0;
-  const label=hasSizes&&!state.size?'Выбрать размер':state.check==='pending'?'Проверяем…':['error','unknown','unavailable'].includes(state.check)?'Уточнить':'Заказать';
+  const label=isOnSizeProduct(state.product)?'Заказать':hasSizes&&!state.size?'Выбрать размер':state.check==='pending'?'Проверяем…':['error','unknown','unavailable'].includes(state.check)?'Уточнить':'Заказать';
   for(const id of ['detail-contact','dock-contact']){
     const button=document.getElementById(id);if(!button)continue;
     button.textContent=label;button.disabled=state.check==='pending';

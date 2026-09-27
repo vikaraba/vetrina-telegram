@@ -24,8 +24,8 @@ export class StorefrontError extends Error{
 }
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
-  const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+  const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,sizeAvailability}=raw;
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,sizeAvailability:Array.isArray(sizeAvailability)?sizeAvailability:[],telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
 }
 export function telegramPostUrl(value){
   // Accept message permalinks only, never a source website, profile, invite or launch URL.
@@ -72,6 +72,8 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
       return [...items.values()];
     },
     async product(id){return normalizeProduct(await api('product',{id}));},
+    async availability(id){return api('on-availability',{id});},
+    async restock(productId,size,action){return api('on-restock',{}, {productId,size,action});},
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },

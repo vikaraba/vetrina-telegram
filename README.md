@@ -27,7 +27,7 @@ Ogni richiesta invia `x-telegram-init-data` e contesto client versionato
 Nessuna persistenza applicativa di questi dati in localStorage/cookie.
 
 Prezzo cliente soltanto RUB positivo, altrimenti “Цена уточняется”.
-La scelta della misura non dichiara stock: conferma esplicita nel roller,
+La scelta della misura non dichiara stock: selezione esplicita nella griglia ON (roller per altri prodotti),
 `size-interest`, polling `size-status`, poi disponibile/non disponibile/
 da chiarire/errore. Timeout e risultati tardivi non possono confermare una
 misura diversa. Retry ambiguo riusa l'event ID/check ID, senza nuova richiesta.
@@ -51,9 +51,14 @@ Le foto complete sono richieste soltanto aprendo il prodotto. La griglia carica
 solo cover; dettaglio con miniature differite e zoom; barra superiore persistente
 con “В каталог” e “Другие модели”.
 
-Il filtro globale per misura **non è attivato**: l'API lista corrente espone
-soltanto `sizeCount`, non i valori. Le misure reali sono selezionabili nel dettaglio.
-Non si scaricano tutti i dettagli per simulare quel filtro, inquinando le aperture.
+Il filtro ON per misura usa il riepilogo compatto `sizeAvailability` dell'API lista:
+più taglie sono alternative (OR), combinabili con genere, modello, colore e prezzo.
+Solo osservazioni positive recenti (massimo sei ore) contano. Nessuna chiamata
+ai dettagli per costruire il filtro, nessuna apertura analytics artificiale.
+Il pulsante verifica resta centrato sotto il prezzo e Ordina fisso in basso.
+L'apertura della griglia controlla il modello, senza registrare interesse per tutte
+le taglie. La selezione avvia la verifica canonica della singola misura.
+Il campanello registra un consenso revocabile modello/taglia, non un ordine.
 
 ## Verifica e rilascio
 
@@ -63,7 +68,7 @@ Node24, nessuna dipendenza da installare:
 npm run verify
 ```
 
-Il build locale produce in `dist/` solo sei asset pubblici e il manifest SHA256.
+Il build locale produce in `dist/` solo otto asset pubblici e il manifest SHA256.
 Il workflow PR esegue un gate unico, annulla le revisioni obsolete e ignora draft.
 Pages usa la configurazione esistente `main:/`; `_config.yml` esclude script,
 test e documenti. Il merge è quindi il confine di rilascio pubblico.
@@ -79,15 +84,16 @@ iniettato solo da quel server, escluso da Pages. Non equivale a una verifica
 autenticata in Telegram o su iPhone fisico.
 
 Per collaudare un build congelato, impostare `MINIAPP_UAT_BUILD` alla directory
-dei sei asset e `MINIAPP_UAT_PORT` a una porta locale libera. Le query locali
+degli otto asset e `MINIAPP_UAT_PORT` a una porta locale libera. Le query locali
 `catalog=empty|error|retry`, `detail=error`, `unauthenticated=1`,
 `outcome=available|unavailable|unknown|failed|queued` e `theme=dark` coprono gli
 stati limite. Il log visibile e il pulsante Telegram Back simulato consentono
 di verificare richieste e navigazione; i contatti restano sempre simulati.
 
 Prima del merge: gate e UAT della revisione finale, main ancora sulla base attesa.
-Dopo: una sola build Pages sull'esatto SHA, confronto hash dei sei asset live,
+Dopo: una sola build Pages sull'esatto SHA, confronto hash degli otto asset live,
 controlli di accesso, release record GitHub con rollback al precedente SHA.
 Non rilanciare deploy verdi sullo stesso SHA.
 
 Per backend compatibile, evidenze e limiti vedere [release](docs/release-20260926.md).
+Il candidato disponibilità ON è descritto in [release-20260927-availability](docs/release-20260927-availability.md): non è ancora pubblicato.
