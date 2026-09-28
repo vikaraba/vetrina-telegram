@@ -41,6 +41,7 @@ test('Messika uses the same catalog and Russian jewelry rules without invented p
   assert.equal(categoryOf(messika),'bracelets');
   assert.equal(jewelryMaterial(messika),'Белое золото');
   assert.equal(validPrice(messika),false);
+  assert.equal(validPrice({...messika,priceMode:'on_request',priceAmount:100000,priceCurrency:'RUB'}),false);
   assert.equal(filterProducts([ring,vca,messika],{...blankFilters(),brand:'Messika'},'браслет')[0].id,4);
   assert.equal(filterProducts([messika],{...blankFilters(),minPrice:'1'}).length,0);
   assert.equal(facets([ring,vca,messika],blankFilters(),'','brand').find(x=>x.value==='Messika').count,1);

@@ -25,7 +25,17 @@ export class StorefrontError extends Error{
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+  const onRequest=raw.priceMode==='on_request'&&brand==='Messika'&&priceAmount==null&&priceCurrency==null;
+  const inconsistent=raw.priceMode==='on_request'&&!onRequest;
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
+    priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
+    priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,
+    telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+}
+export function customerPriceLabel(product){
+  if(product.priceMode==='on_request'&&product.brand==='Messika'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
+  return product.priceCurrency==='RUB'&&Number.isFinite(product.priceAmount)&&product.priceAmount>0
+    ?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(product.priceAmount)+' ₽':'Цена уточняется';
 }
 export function telegramPostUrl(value){
   // Accept message permalinks only, never a source website, profile, invite or launch URL.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createStorefrontClient,requestedProductId,normalizeProduct,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
+import {createStorefrontClient,requestedProductId,normalizeProduct,customerPriceLabel,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
 import {blankFilters,filterProducts,facets,setFilter,priceError} from './catalog-core.mjs';
 import {createLatestCheck,sizeValues,indexAtScroll} from './size-picker.mjs';
 const tg={initData:'synthetic-test-signature',initDataUnsafe:{start_param:'product_7'},platform:'test'};
@@ -78,6 +78,17 @@ test('contact opens synchronously, even when analytics never resolves; contains 
 test('customer DTO drops source cost and arbitrary private fields',()=>{
   const p=normalizeProduct({...item(1),priceEur:99,secret:'x'});assert.ok(!('priceEur'in p));assert.ok(!('secret'in p));
   assert.equal(normalizeProduct({...item(1),priceAmount:null}).priceAmount,null);
+});
+test('Messika on-request price is explicit and never inferred from null or EUR',()=>{
+  const messika=normalizeProduct({...item(1),brand:'Messika',priceMode:'on_request',priceAmount:null,priceCurrency:null,priceEur:1200});
+  assert.equal(messika.priceMode,'on_request');
+  assert.equal(customerPriceLabel(messika),'Цена по запросу');
+  assert.ok(!('priceEur' in messika));
+  assert.equal(customerPriceLabel(normalizeProduct({...item(1),brand:'Messika',priceAmount:null,priceCurrency:null})),'Цена уточняется');
+  const inconsistent=normalizeProduct({...item(1),brand:'Messika',priceMode:'on_request',priceAmount:250000,priceCurrency:'RUB'});
+  assert.equal(customerPriceLabel(inconsistent),'Цена уточняется');
+  assert.equal(inconsistent.priceAmount,null);
+  assert.match(customerPriceLabel(normalizeProduct({...item(1),priceAmount:18000,priceCurrency:'RUB'})),/^18\s000 ₽$/u);
 });
 test('UUID and client metadata preserve legacy schema',()=>{
   assert.match(randomUuid(),/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);

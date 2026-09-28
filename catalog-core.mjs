@@ -31,7 +31,7 @@ export const colorLabels={'Nero':'Чёрный','Rosso Ciliegia':'Вишнёвы
 export const colorLabel=value=>colorLabels[value]||value;
 const norm=value=>String(value??'').normalize('NFKC').toLocaleLowerCase('ru').replace(/[|·/–—_-]/g,' ').replace(/\s+/g,' ').trim();
 const searchTerms=q=>norm(q).replace(/\b(lv|louisvuitton)\b/g,'louis vuitton').replace(/(^|\s)(лв|луи виттон|луи вуиттон)(?=\s|$)/g,' louis vuitton').split(' ').filter(Boolean);
-export const validPrice=p=>p.priceCurrency==='RUB'&&Number.isFinite(p.priceAmount)&&p.priceAmount>0;
+export const validPrice=p=>p.priceMode!=='on_request'&&p.priceCurrency==='RUB'&&Number.isFinite(p.priceAmount)&&p.priceAmount>0;
 export function priceError(f){
   for(const k of ['minPrice','maxPrice'])if(f[k]!==''&&(!/^\d+$/.test(String(f[k]))||!Number.isSafeInteger(Number(f[k]))))return 'Введите цену в целых рублях, не меньше 0.';
   return f.minPrice!==''&&f.maxPrice!==''&&Number(f.minPrice)>Number(f.maxPrice)?'Цена «от» не должна превышать цену «до».':'';
