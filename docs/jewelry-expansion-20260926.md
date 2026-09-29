@@ -87,6 +87,27 @@ corretti tre residui generici (`single hoop earring`, `Symbol pendant`,
 `modello mini`) senza alterare i nomi delle collezioni. Zero residui di quei
 termini nel fixture; non equivale a un audit di tutte le schede CRM Cartier/VCA.
 
+### Prova di scala locale — 124 schede, 29 settembre
+
+Una fixture privata derivata dall'archivio ufficiale aggiunge 84 Messika
+alla canary già presente e alle 39 schede degli altri brand: **124 DTO** in
+cinque brand. Restano esclusi 129 (URL CRM incoerente) e 219 (categoria
+`unknown` nell'archivio storico); la correzione del parser 219 richiede
+un nuovo manifest. Lo script `scripts/build-messika-uat-fixture.mjs` produce
+solo DTO cliente sintetici con `Цена по запросу`, nessun prezzo ufficiale EUR,
+fonte o dato interno, e scrive con creazione esclusiva in un percorso privato.
+Non è un comando di import o pubblicazione.
+
+Browser locale 430×932 e 1440×900: due pagine API simulate (offset 0 e 100),
+cinque ingressi brand, 85 Messika, ricerca russa `кольцо` → 32 risultati,
+filtro anelli, scheda con tre foto ufficiali locali e prezzo su richiesta.
+Zero errori JavaScript, foto fallite o overflow; nessun colore fittizio sotto
+il titolo quando manca il campo fonte. Cinque aperture in contesti browser
+nuovi per formato hanno mostrato la home con mediana **56 ms iPhone simulato**
+e **52 ms Mac simulato**, massimi 183 e 59 ms. Sono tempi del preview locale
+con API simulata, non prestazioni del backend o dei dispositivi fisici; manca
+ancora il confronto baseline/candidato cold/warm richiesto per il rilascio.
+
 - VCA: 170 schede tecnicamente eleggibili. Primo gruppo di 7 con prezzi manuali
   esistenti preservati: fonti ufficiali ricontrollate il 26/09, prezzo fonte
   invariato, gallerie complete, disponibilità osservata (non garanzia stock).
