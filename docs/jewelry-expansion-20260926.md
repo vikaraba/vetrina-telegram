@@ -82,6 +82,10 @@ russa per tutte le quattro categorie riconosciute: 33 anelli, 21 bracciali,
 Le collezioni e la referenza separata restano intatte; l'audit non traduce
 descrizioni marketing né certifica prezzo, stock o readiness. Regressioni
 su frasi rappresentative e browser UAT misto sono passati dopo la modifica.
+Sul fixture locale non-ON sono stati inoltre verificati 37 titoli Cartier/VCA:
+corretti tre residui generici (`single hoop earring`, `Symbol pendant`,
+`modello mini`) senza alterare i nomi delle collezioni. Zero residui di quei
+termini nel fixture; non equivale a un audit di tutte le schede CRM Cartier/VCA.
 
 - VCA: 170 schede tecnicamente eleggibili. Primo gruppo di 7 con prezzi manuali
   esistenti preservati: fonti ufficiali ricontrollate il 26/09, prezzo fonte

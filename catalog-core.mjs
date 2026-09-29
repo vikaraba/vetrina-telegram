@@ -18,6 +18,10 @@ export function productTitle(p){
   }
   if(!jewelryBrand(p))return modelName(p);
   let text=p.name||p.model||'';
+  if(p.brand==='Cartier')for(const [pattern,replacement] of [
+    [/^(.+?) single hoop earring, mini model$/i,(_,model)=>`Одиночная серьга-кольцо ${model}, мини-модель`],
+    [/^(.+?) pendant$/i,(_,model)=>`Подвеска ${model}`]
+  ])text=text.replace(pattern,replacement);
   if(p.brand==='Messika')for(const [pattern,replacement] of [
     [/\bBracciale rigido\b/gi,'Жёсткий браслет'],[/\bAnello chevalier\b/gi,'Кольцо-печатка'],
     [/\bAnello rivière\b/gi,'Кольцо-дорожка'],[/\bCollana rivière\b/gi,'Колье-ривьера'],
@@ -29,7 +33,7 @@ export function productTitle(p){
     [/^(.+?) asymmetrical earrings$/i,(_,model)=>`Асимметричные серьги ${model}`],
     [/^(.+?) bracelet$/i,(_,model)=>`Браслет ${model}`]
   ])text=text.replace(pattern,replacement);
-  for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelets?/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
+  for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelets?/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/mini model|modello mini/gi,'мини-модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
   if(p.brand==='Messika')for(const [pattern,replacement] of [
     [/con cordino/gi,'на шнурке'],[/con semi pavé/gi,'с частичным паве'],[/con charm e pavé/gi,'с подвеской и паве'],
     [/con charm/gi,'с подвеской'],[/con pavé/gi,'с паве'],[/con diamanti/gi,'с бриллиантами'],

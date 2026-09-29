@@ -11,6 +11,9 @@ test('all imported Cartier and Van Cleef category aliases have Russian labels',(
 test('jewelry title preserves actual product identity, model remains a filter',()=>{
   assert.equal(productTitle(ring),'1895 Обручальное кольцо, 2.5 мм ширина');
   assert.equal(productTitle(vca),'Обручальное кольцо Toujours, 2,5 мм');
+  assert.equal(productTitle(pendant),'Подвеска Symbol');
+  assert.equal(productTitle({brand:'Cartier',category:'earrings',name:'Juste un Clou single hoop earring, mini model'}),'Одиночная серьга-кольцо Juste un Clou, мини-модель');
+  assert.equal(productTitle({brand:'Van Cleef & Arpels',category:'earrings',name:'Orecchini Frivole modello mini'}),'Серьги Frivole мини-модель');
   assert.equal(modelName(ring),'1895');assert.equal(modelName(vca),'Fedi nuziali');
 });
 test('existing ON and LV titles and category semantics remain unchanged',()=>{
