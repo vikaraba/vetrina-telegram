@@ -64,7 +64,10 @@ Su 430×932 e 1440×900: cinque ingressi brand, tre foto Messika, due orologi
 nel filtro Cartier, cinque foto del Tank WSTA0136 e immagine hero da 1600 px;
 nessuna immagine fallita, errore JavaScript o overflow orizzontale. Il titolo
 degli orologi presenta `Часы` prima della variante, mantenendo modello e
-referenza. Il preview locale accetta fixture aggiuntive soltanto per UAT,
+referenza. La revisione visiva della home su entrambi i formati ha confermato
+cinque card brand leggibili e copertine caricate; ha rilevato un riquadro di
+focus non necessario sul titolo iniziale, ora rimosso soltanto per quel titolo
+non interattivo. Il preview locale accetta fixture aggiuntive soltanto per UAT,
 senza includerle nei sei asset di produzione. Questo è collaudo locale
 simulato, non prova di sessione Telegram firmata, iPhone fisico, media Messika in Storage,
 prestazioni cold/warm o deploy Pages. Le foto Messika vengono intercettate

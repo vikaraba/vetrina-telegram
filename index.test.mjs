@@ -35,6 +35,7 @@ test('top navigation, minimal copy, proportional product grid and roller stay in
   assert.doesNotMatch(app+html,/Для вас, под заказ|Наличие и итоговую стоимость подтверждает Анастасия перед покупкой|Ваш персональный каталог|ПЕРСОНАЛЬНЫЙ ШОПИНГ/);
 });
 test('safe-area, dark palette, reduced motion and readable input rules',()=>{assert.match(css,/safe-area-inset-bottom/);assert.match(css,/min-height:44px/);assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/font-size:16px/);assert.match(app,/themeChanged/);});
+test('programmatically focused home heading does not draw a non-interactive ring',()=>{assert.match(app,/id="home-title" tabindex="-1"/);assert.match(css,/#home-title:focus\{outline:none\}/);});
 test('identity never persisted by application; client context remains untrusted metadata',()=>{assert.doesNotMatch(app+api,/localStorage|sessionStorage|document.cookie/);assert.match(api,/client_reported/);assert.match(api,/x-telegram-init-data/);assert.match(api,/page_session_id/);});
 test('gallery never truncates; back and browser history keep catalog context',()=>{assert.doesNotMatch(app,/images[^\n]*slice\(0/);assert.match(app,/restore:true/);assert.match(app,/popstate/);assert.match(app,/navigation!==state.navigation/);assert.match(app,/BackButton/);});
 test('size check uses real service; future non-ON sizes remain manual, never fake available',()=>{assert.match(app,/sourceId==='on_running_it'\?client.checkSize/);assert.doesNotMatch(app,/setTimeout\(resolve,850\)/);assert.match(app,/Promise.resolve\('unknown'\)/);});

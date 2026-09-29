@@ -138,6 +138,7 @@ body:has(dialog[open]) .mobile-dock{visibility:hidden}
 .brand-home{max-width:1120px;margin:auto;padding:36px 24px max(24px,env(safe-area-inset-bottom));animation:fade .2s ease}
 .home-heading{padding:16px 0 30px;max-width:650px}
 .home-heading h1{font:500 clamp(30px,4vw,48px)/1.12 Georgia,serif;letter-spacing:-.035em}
+#home-title:focus{outline:none}
 .home-heading>p:last-child{color:var(--muted);margin-top:14px;font-size:16px}
 .brand-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
 .brand-grid:has(>.brand-card:last-child:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr))}
