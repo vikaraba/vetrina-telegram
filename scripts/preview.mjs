@@ -10,7 +10,11 @@ if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid local UAT
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
 const mediaRoot=process.env.MINIAPP_UAT_MEDIA_ROOT?await realpath(resolve(process.env.MINIAPP_UAT_MEDIA_ROOT)):null;
-const raw=JSON.parse(await readFile(fixture,'utf8'));
+const fixturePaths=[fixture,...String(process.env.MINIAPP_UAT_EXTRA_FIXTURES||'').split(',').filter(Boolean)];
+const sources=await Promise.all(fixturePaths.map(async path=>JSON.parse(await readFile(resolve(path),'utf8'))));
+if(sources.some(source=>!Array.isArray(source)))throw Error('Every UAT fixture must be a product array');
+const raw=sources.flat();
+if(new Set(raw.map(product=>product.id)).size!==raw.length)throw Error('Duplicate product ID across UAT fixtures');
 const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
 const setup=`
 const originalFetch=window.fetch.bind(window);
@@ -48,7 +52,7 @@ window.fetch=async(url,options={})=>{
  if(action==='interaction')return answer({ok:true});
  throw Error('Unmocked UAT request');
 };
-await import('/vetrina-telegram/app.js?v=20260929-size-messika');
+await import('/vetrina-telegram/app.js?v=20260929-watch-russian-copy');
 `;
 const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs']);
 http.createServer(async(req,res)=>{
@@ -70,7 +74,7 @@ http.createServer(async(req,res)=>{
    const name=path.replace(/^\/vetrina-telegram\//,'')||'index.html';
    if(!assets.has(name)){res.writeHead(404);res.end();return;}
    let content=await readFile(new URL(name,root),'utf8');
-   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260929-size-messika"','src="/__qa/setup.js"');
+   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260929-watch-russian-copy"','src="/__qa/setup.js"');
    if(name==='app.js'&&mediaRoot)content=content.replace('https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/public/product-images/','/__qa/media/');
    res.setHeader('Content-Type',name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.css')?'text/css':'text/javascript');res.end(content);
  }catch{res.writeHead(500);res.end('Local UAT failed');}

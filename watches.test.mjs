@@ -10,9 +10,10 @@ test('watch aliases share the Russian category without inferring from brand or m
  assert.equal(categoryOf({brand:'CHOPARD',category:'gioielli'}),'jewelry');
 });
 test('watch identity retains full model variant, independent of brand',()=>{
- assert.equal(productTitle(a),'Tank Must de Cartier Часы');
- assert.equal(productTitle({brand:'BVLGARI',category:'orologi',model:'Serpenti',name:'Serpenti Tubogas Orologio'}),'Serpenti Tubogas Часы');
- assert.equal(productTitle({brand:'CHOPARD',category:'watches',model:'Happy Sport',name:'Happy Sport 30 mm automatico'}),'Happy Sport 30 mm automatico');
+ assert.equal(productTitle(a),'Часы Tank Must de Cartier');
+ assert.equal(productTitle({brand:'BVLGARI',category:'orologi',model:'Serpenti',name:'Serpenti Tubogas Orologio'}),'Часы Serpenti Tubogas');
+ assert.equal(productTitle({brand:'CHOPARD',category:'watches',model:'Happy Sport',name:'Happy Sport 30 mm automatico'}),'Часы Happy Sport 30 мм автоматические');
+ assert.equal(productTitle({brand:'Cartier',category:'watches',name:'Часы Tank Must de Cartier'}),'Часы Tank Must de Cartier');
 });
 test('exact references distinguish two watches from the same collection',()=>{
  assert.deepEqual(filterProducts([a,b],{...blankFilters(),brand:'Cartier',category:'watches'},'WSTA0136').map(p=>p.id),[275]);

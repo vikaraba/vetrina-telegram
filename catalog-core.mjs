@@ -12,7 +12,10 @@ const jewelryBrand=p=>['Cartier','Van Cleef & Arpels','Messika'].includes(p.bran
 export function productTitle(p){
   // Watches retain the exact variant name, not just the collection. Category
   // labels are presentation only: they never establish source/reference identity.
-  if(categoryOf(p)==='watches')return (p.name||p.model||'').replace(/\b(?:watches|watch|orologio)\b/gi,'Часы').trim();
+  if(categoryOf(p)==='watches'){
+    const variant=String(p.name||p.model||'').replace(/\b(?:watches|watch|orologi|orologio)\b/gi,'').replace(/\bautomatico\b/gi,'автоматические').replace(/\bmm\b/gi,'мм').replace(/\s+/g,' ').trim();
+    return /^Часы(?:\s|$)/i.test(variant)?variant:`Часы${variant?' '+variant:''}`;
+  }
   if(!jewelryBrand(p))return modelName(p);
   let text=p.name||p.model||'';
   for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelet/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);

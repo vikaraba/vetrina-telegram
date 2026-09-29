@@ -12,7 +12,8 @@ CRM source dell'audit aggiornato: 3934dfc2ac3a36f666962007d42d2bfd46de48dd.
   inferita e nessuna descrizione marketing usata come materiale.
 - Ricerca russa dei nuovi titoli; filtri modello e SKU invariati.
 - Messika usa lo stesso contratto gioielli: nessun prezzo, materiale o stock
-  inventato. Le schede senza prezzo RUB valido non diventano pubblicabili.
+  inventato. Per le schede senza prezzo cliente RUB la scelta commerciale
+  confermata è `Цена по запросу`, con prezzo finale confermato in chat.
 - Entry point, modulo ordini e modulo catalogo hanno una versione cache coerente.
 - Preview locale con porta configurabile, per non interrompere altre anteprime.
 - Homepage brand e griglia proporzionale della PR #13, colori, foto/zoom,
@@ -45,7 +46,7 @@ baseline/candidato a cache fredda/calda: la velocità non è dichiarata PASS.
 
 ## Stato dati e blocchi di attivazione
 
-### UAT locale Messika 29 settembre — PR #17
+### UAT locale Messika e catalogo misto 29 settembre — PR #17
 
 Con fixture customer-only `14142-WG` e tre JPEG ufficiali locali verificati
 per SHA256, apertura diretta `product_115` e percorso dettaglio → seconda foto
@@ -56,9 +57,18 @@ disponibilità/prezzo finale e non invia messaggi. Nessun overflow orizzontale
 osservato nel percorso. Il pannello filtri inizialmente indicava erroneamente
 «Нет товаров по текущему запросу» pur mostrando un prodotto Messika: corretto
 per spiegare che questi articoli sono visibili ma esclusi da un limite RUB.
-Regressione dedicata e `npm run verify` 53/53 PASS. Questo è collaudo locale
-simulato, non prova di sessione Telegram firmata, iPhone fisico, Storage live,
-prestazioni cold/warm o deploy Pages.
+Regressione dedicata e `npm run verify` 53/53 PASS. Un secondo collaudo della
+stessa revisione usa 40 DTO fixture di 5 brand (Cartier, Louis Vuitton,
+Messika, On, Van Cleef & Arpels) e le foto Cartier già pubbliche in Storage.
+Su 430×932 e 1440×900: cinque ingressi brand, tre foto Messika, due orologi
+nel filtro Cartier, cinque foto del Tank WSTA0136 e immagine hero da 1600 px;
+nessuna immagine fallita, errore JavaScript o overflow orizzontale. Il titolo
+degli orologi presenta `Часы` prima della variante, mantenendo modello e
+referenza. Il preview locale accetta fixture aggiuntive soltanto per UAT,
+senza includerle nei sei asset di produzione. Questo è collaudo locale
+simulato, non prova di sessione Telegram firmata, iPhone fisico, media Messika in Storage,
+prestazioni cold/warm o deploy Pages. Le foto Messika vengono intercettate
+nel browser QA e fornite dall'archivio locale: non sono ancora in Storage.
 
 - VCA: 170 schede tecnicamente eleggibili. Primo gruppo di 7 con prezzi manuali
   esistenti preservati: fonti ufficiali ricontrollate il 26/09, prezzo fonte
@@ -67,9 +77,10 @@ prestazioni cold/warm o deploy Pages.
   prezzo calcolato fonte discordanti. Richiesta riconciliazione canonica prima
   dell'attivazione; questa PR non aggiorna né arrotonda prezzi salvati.
 - Messika: 115 schede, zero prezzi cliente RUB; 87 URL ufficiali individuati.
-  Le poche immagini approvate esistenti provengono da import Telegram privati:
-  non renderle pubbliche. Servono regola commerciale, import fonte ufficiale e
-  media pubblici approvati, usando il CRM come unica fonte.
+  La regola `Цена по запросу` è stata confermata, ma non sostituisce import
+  fonte ufficiale e media pubblici approvati. Le poche immagini approvate
+  esistenti provengono da import Telegram privati: non renderle pubbliche.
+  Il CRM resta l'unica fonte del catalogo.
 
 **Draft, non ancora rilasciata.** Restano raccolta prestazioni, verifica Telegram
 reale, coordinamento con il proprietario del rilascio CRM e attivazione per
