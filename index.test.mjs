@@ -38,4 +38,13 @@ test('safe-area, dark palette, reduced motion and readable input rules',()=>{ass
 test('identity never persisted by application; client context remains untrusted metadata',()=>{assert.doesNotMatch(app+api,/localStorage|sessionStorage|document.cookie/);assert.match(api,/client_reported/);assert.match(api,/x-telegram-init-data/);assert.match(api,/page_session_id/);});
 test('gallery never truncates; back and browser history keep catalog context',()=>{assert.doesNotMatch(app,/images[^\n]*slice\(0/);assert.match(app,/restore:true/);assert.match(app,/popstate/);assert.match(app,/navigation!==state.navigation/);assert.match(app,/BackButton/);});
 test('size check uses real service; future non-ON sizes remain manual, never fake available',()=>{assert.match(app,/sourceId==='on_running_it'\?client.checkSize/);assert.doesNotMatch(app,/setTimeout\(resolve,850\)/);assert.match(app,/Promise.resolve\('unknown'\)/);});
+test('ON verification is centered beneath price while ordering stays in the mobile dock',()=>{
+  assert.match(app,/sizeTrigger\.classList\.add\('size-trigger--verify'\)/);
+  assert.match(app,/\$\('\.price-note'\)\.before\(sizeTrigger\)/);
+  assert.match(app,/id="selected-size"[^<]*>Выбрать размер/);
+  assert.match(app,/textContent='Проверить размеры'/);
+  assert.match(css,/\.size-trigger--verify\{[^}]*justify-content:center/);
+  assert.match(app,/class="mobile-dock"[^`]*id="dock-contact"/);
+  assert.match(app,/const label=state\.check==='pending'\?'Проверяем…':'Заказать'/);
+});
 test('catalog fetch does not auto-open product details or fabricate all-size facets',()=>{assert.doesNotMatch(app,/select\('size','Размер'/);assert.match(app,/p=await client.product\(id\)/);assert.match(app,/state.products=products/);});
