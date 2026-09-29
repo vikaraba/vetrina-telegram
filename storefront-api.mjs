@@ -1,4 +1,5 @@
 // Existing authenticated Edge contract. Never persist or put initData in a URL.
+import {colorLabel} from './catalog-core.mjs';
 export const API_BASE='https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront';
 export const MINI_APP_URL='https://t.me/aerofeevaBot/katalog';
 export function randomUuid(){
@@ -114,7 +115,7 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
 export function contactUrl(product,size){
   const post=telegramPostUrl(product.telegramPostUrl);
   const message='Анастасия, здравствуйте!\n\nМеня интересует '+product.brand+' '+product.name+
-    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+product.color:'')+'.'+
+    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+colorLabel(product.color):'')+'.'+
     (size?'\nРазмер '+(product.category==='shoes'?'EU ':'')+size+'.':'')+
     '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!'+
     (post?'\n\nПубликация в каталоге:\n'+post:'');

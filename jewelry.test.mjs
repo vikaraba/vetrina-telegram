@@ -49,3 +49,10 @@ test('Messika uses the same catalog and Russian jewelry rules without invented p
   assert.equal(jewelryMaterial({...messika,description:'Move Uno'}),'Уточним в личном сообщении');
   assert.equal(modelName(messika),'Messika CARE(S)');
 });
+test('Messika contact translates a known color and asks for the final price in chat',()=>{
+  const item={brand:'Messika',name:'Колье Messika CARE(S) чёрный',reference:'14142-WG',color:'Nero',category:'necklaces',priceMode:'on_request'};
+  const text=new URL(contactUrl(item,null)).searchParams.get('text');
+  assert.match(text,/цвет Чёрный/);
+  assert.match(text,/итоговую стоимость/);
+  assert.doesNotMatch(text,/Nero|\d+ ₽/);
+});

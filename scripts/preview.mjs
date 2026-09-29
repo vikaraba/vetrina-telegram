@@ -1,13 +1,15 @@
 // Local-only contract UAT. Neither this server nor its injected transport is a Pages asset.
 import http from 'node:http';
-import {readFile} from 'node:fs/promises';
-import {resolve} from 'node:path';
+import {readFile,realpath} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 const root=process.env.MINIAPP_UAT_BUILD?pathToFileURL(resolve(process.env.MINIAPP_UAT_BUILD)+'/'):new URL('../',import.meta.url);
 const port=Number(process.env.MINIAPP_UAT_PORT||43135);
 if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid local UAT port');
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
+const mediaRoot=process.env.MINIAPP_UAT_MEDIA_ROOT?await realpath(resolve(process.env.MINIAPP_UAT_MEDIA_ROOT)):null;
 const raw=JSON.parse(await readFile(fixture,'utf8'));
 const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
 const setup=`
@@ -55,12 +57,21 @@ http.createServer(async(req,res)=>{
  if(req.method!=='GET'){res.writeHead(405);res.end();return;}
  const path=new URL(req.url,'http://localhost').pathname;
  try{
+   if(path.startsWith('/__qa/media/')){
+     if(!mediaRoot){res.writeHead(404);res.end();return;}
+     const match=/^\/__qa\/media\/qa\/([a-f0-9]{64})[.]jpg$/.exec(path);
+     if(!match){res.writeHead(404);res.end();return;}
+     const bytes=await readFile(join(mediaRoot,match[1]+'.jpg'));
+     if(createHash('sha256').update(bytes).digest('hex')!==match[1])throw Error('Media fixture checksum mismatch');
+     res.setHeader('Content-Type','image/jpeg');res.end(bytes);return;
+   }
    if(path==='/__qa/data'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(products));return;}
    if(path==='/__qa/setup.js'){res.setHeader('Content-Type','text/javascript');res.end(setup);return;}
    const name=path.replace(/^\/vetrina-telegram\//,'')||'index.html';
    if(!assets.has(name)){res.writeHead(404);res.end();return;}
    let content=await readFile(new URL(name,root),'utf8');
    if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260929-messika-request"','src="/__qa/setup.js"');
+   if(name==='app.js'&&mediaRoot)content=content.replace('https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/public/product-images/','/__qa/media/');
    res.setHeader('Content-Type',name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.css')?'text/css':'text/javascript');res.end(content);
  }catch{res.writeHead(500);res.end('Local UAT failed');}
 }).listen(port,'127.0.0.1',()=>console.log('Local staging UAT: http://127.0.0.1:'+port+'/vetrina-telegram/ · assets: '+root.pathname));
