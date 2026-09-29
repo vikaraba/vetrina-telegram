@@ -1,6 +1,16 @@
 // Data-driven catalog rules. No API calls and no assumptions about stock.
 export const blankFilters=()=>({brand:'all',category:'all',gender:'all',model:'all',color:'all',size:'all',minPrice:'',maxPrice:''});
-export const modelName=p=>(p.model||p.name||'').replace(/\s+da (uomo|donna)/gi,'').replace(/^Borsa /,'').replace(/^Portafoglio con catenella /,'').replace(/ con catenella/,'').trim();
+const messikaCollections=['Messika Care(s)','Imperial Move','Move Classique','Move Titanium','Move Romane','Move Link','Move Noa','Move Uno','Lucky Move','So Move','D-Vibes','My Twin','Moderniste','Fiery'];
+export const modelName=p=>{
+  if(p.brand==='Messika'){
+    if(String(p.model||'').trim())return String(p.model).trim();
+    const label=String(p.name||'').toLocaleLowerCase('ru');
+    // Only verified collection names become model facets. An unknown name
+    // remains searchable as a product, without creating an Italian facet.
+    return messikaCollections.find(collection=>label.includes(collection.toLocaleLowerCase('ru')))||'';
+  }
+  return (p.model||p.name||'').replace(/\s+da (uomo|donna)/gi,'').replace(/^Borsa /,'').replace(/^Portafoglio con catenella /,'').replace(/ con catenella/,'').trim();
+};
 const categoryLabels={shoes:'Обувь','bags-accessories':'Сумки и аксессуары',bags:'Сумки',jewelry:'Украшения',watches:'Часы',clothing:'Одежда',accessories:'Аксессуары',rings:'Кольца','wedding-rings':'Обручальные кольца',bracelets:'Браслеты',earrings:'Серьги',necklaces:'Колье и цепочки',pendants:'Подвески','necklaces-pendants':'Колье и подвески',other:'Другие товары'};
 const categoryAliases={'wedding band':'wedding-rings',nozze:'wedding-rings',fede:'wedding-rings',ring:'rings',anello:'rings',bracelet:'bracelets',bracciale:'bracelets',earrings:'earrings',orecchini:'earrings',pendants:'pendants',pendente:'pendants',necklace:'necklaces',collana:'necklaces',necklaces_and_pendants:'necklaces-pendants','steel watches':'watches',watches:'watches',watch:'watches',orologi:'watches',orologio:'watches',orologi_gioiello:'watches',jewelry_watches:'watches','часы':'watches',gioielleria:'jewelry',gioielli:'jewelry'};
 // The legacy snapshot labels its bag/accessory category with a brand name.
@@ -64,7 +74,7 @@ export function priceError(f){
 }
 export function valuesFor(p,key){
   if(key==='category')return [categoryOf(p)];
-  if(key==='model')return [modelName(p)];
+  if(key==='model')return modelName(p)?[modelName(p)]:[];
   if(key==='size')return [...new Set((p.sizes||[]).map(s=>String(s.value)).filter(Boolean))];
   return p[key]?[String(p[key])]:[];
 }

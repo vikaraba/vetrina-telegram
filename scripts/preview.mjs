@@ -9,7 +9,9 @@ const port=Number(process.env.MINIAPP_UAT_PORT||43135);
 if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid local UAT port');
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
-const mediaRoot=process.env.MINIAPP_UAT_MEDIA_ROOT?await realpath(resolve(process.env.MINIAPP_UAT_MEDIA_ROOT)):null;
+const mediaRoots=await Promise.all([process.env.MINIAPP_UAT_MEDIA_ROOT,
+  ...String(process.env.MINIAPP_UAT_EXTRA_MEDIA_ROOTS||'').split(',')]
+  .filter(Boolean).map(path=>realpath(resolve(path))));
 const fixturePaths=[fixture,...String(process.env.MINIAPP_UAT_EXTRA_FIXTURES||'').split(',').filter(Boolean)];
 const sources=await Promise.all(fixturePaths.map(async path=>JSON.parse(await readFile(resolve(path),'utf8'))));
 if(sources.some(source=>!Array.isArray(source)))throw Error('Every UAT fixture must be a product array');
@@ -52,7 +54,7 @@ window.fetch=async(url,options={})=>{
  if(action==='interaction')return answer({ok:true});
  throw Error('Unmocked UAT request');
 };
-await import('/vetrina-telegram/app.js?v=20260929-watch-reference');
+await import('/vetrina-telegram/app.js?v=20260929-messika-collections');
 `;
 const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs']);
 http.createServer(async(req,res)=>{
@@ -62,10 +64,15 @@ http.createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  try{
    if(path.startsWith('/__qa/media/')){
-     if(!mediaRoot){res.writeHead(404);res.end();return;}
+     if(!mediaRoots.length){res.writeHead(404);res.end();return;}
      const match=/^\/__qa\/media\/qa\/([a-f0-9]{64})[.]jpg$/.exec(path);
      if(!match){res.writeHead(404);res.end();return;}
-     const bytes=await readFile(join(mediaRoot,match[1]+'.jpg'));
+     let bytes;
+     for(const root of mediaRoots){
+       try{bytes=await readFile(join(root,match[1]+'.jpg'));break;}
+       catch(error){if(error.code!=='ENOENT')throw error;}
+     }
+     if(!bytes){res.writeHead(404);res.end();return;}
      if(createHash('sha256').update(bytes).digest('hex')!==match[1])throw Error('Media fixture checksum mismatch');
      res.setHeader('Content-Type','image/jpeg');res.end(bytes);return;
    }
@@ -74,8 +81,8 @@ http.createServer(async(req,res)=>{
    const name=path.replace(/^\/vetrina-telegram\//,'')||'index.html';
    if(!assets.has(name)){res.writeHead(404);res.end();return;}
    let content=await readFile(new URL(name,root),'utf8');
-   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260929-watch-reference"','src="/__qa/setup.js"');
-   if(name==='app.js'&&mediaRoot)content=content.replace('https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/public/product-images/','/__qa/media/');
+   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260929-messika-collections"','src="/__qa/setup.js"');
+   if(name==='app.js'&&mediaRoots.length)content=content.replace('https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/public/product-images/','/__qa/media/');
    res.setHeader('Content-Type',name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.css')?'text/css':'text/javascript');res.end(content);
  }catch{res.writeHead(500);res.end('Local UAT failed');}
 }).listen(port,'127.0.0.1',()=>console.log('Local staging UAT: http://127.0.0.1:'+port+'/vetrina-telegram/ · assets: '+root.pathname));

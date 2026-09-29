@@ -24,7 +24,12 @@ if(!archiveArg||!outputArg||(!excludedArg.match(/^(?:[1-9][0-9]*(?:,[1-9][0-9]*)
       ||entry.images.some(image=>!/^[a-f0-9]{64}$/.test(image.optimizedSha256))){
       throw Error('UAT fixture source is incomplete or ambiguous');
     }
-    const images=entry.images.map(image=>({bucket:'product-images',path:`qa/${image.optimizedSha256}.jpg`}));
+    // Mirror the guarded CRM transfer: a verified white image is the cover,
+    // while the rest of the official gallery keeps its source order.
+    const coverIndex=entry.images.findIndex(image=>image.coverEligible&&image.background?.publicationEligible);
+    if(coverIndex<0)throw Error('UAT fixture has no verified white cover');
+    const orderedImages=[entry.images[coverIndex],...entry.images.filter((_,index)=>index!==coverIndex)];
+    const images=orderedImages.map(image=>({bucket:'product-images',path:`qa/${image.optimizedSha256}.jpg`}));
     fixture.push({id,brand:'Messika',name:product.productName,model:null,
       category:product.category,reference:entry.reference,sourceId:'messika_it',
       color:null,gender:null,priceMode:'on_request',priceAmount:null,
