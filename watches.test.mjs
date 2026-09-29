@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {categoryOf,categoryLabel,productTitle,filterProducts,blankFilters,facets} from './catalog-core.mjs';
+import {categoryOf,categoryLabel,productTitle,watchReferenceLabel,filterProducts,blankFilters,facets} from './catalog-core.mjs';
 import {contactUrl} from './storefront-api.mjs';
 const a={id:234,brand:'Cartier',category:'Steel Watches',model:'Tank',name:'Tank Must de Cartier watch',reference:'WSTA0107',priceAmount:417000,priceCurrency:'RUB'};
 const b={...a,id:275,reference:'WSTA0136'};
@@ -13,9 +13,14 @@ test('watch identity retains full model variant, independent of brand',()=>{
  assert.equal(productTitle(a),'Часы Tank Must de Cartier');
  assert.equal(productTitle({brand:'BVLGARI',category:'orologi',model:'Serpenti',name:'Serpenti Tubogas Orologio'}),'Часы Serpenti Tubogas');
  assert.equal(productTitle({brand:'CHOPARD',category:'watches',model:'Happy Sport',name:'Happy Sport 30 mm automatico'}),'Часы Happy Sport 30 мм автоматические');
+ assert.equal(productTitle({brand:'CHOPARD',category:'orologi',name:'Mille Miglia Grigio-Blu &ndash; 2026 Racing Edition'}),'Часы Mille Miglia Grigio-Blu – 2026 Racing Edition');
  assert.equal(productTitle({brand:'Cartier',category:'watches',name:'Часы Tank Must de Cartier'}),'Часы Tank Must de Cartier');
 });
 test('exact references distinguish two watches from the same collection',()=>{
+ assert.equal(watchReferenceLabel(a),'Арт. WSTA0107');
+ assert.equal(watchReferenceLabel(b),'Арт. WSTA0136');
+ assert.equal(watchReferenceLabel({...a,reference:''}),null);
+ assert.equal(watchReferenceLabel({...a,category:'shoes'}),null);
  assert.deepEqual(filterProducts([a,b],{...blankFilters(),brand:'Cartier',category:'watches'},'WSTA0136').map(p=>p.id),[275]);
  assert.equal(filterProducts([a,b],blankFilters(),'WSTA013').length,1);
  assert.equal(facets([a,b],blankFilters(),'','category')[0].value,'watches');

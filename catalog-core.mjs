@@ -6,6 +6,7 @@ const categoryAliases={'wedding band':'wedding-rings',nozze:'wedding-rings',fede
 // The legacy snapshot labels its bag/accessory category with a brand name.
 export const categoryOf=p=>p.category==='Louis Vuitton'?'bags-accessories':categoryAliases[String(p.category||'').trim().toLowerCase()]||p.category||'other';
 export const categoryLabel=value=>categoryLabels[value]||value;
+export const watchReferenceLabel=p=>categoryOf(p)==='watches'&&String(p.reference||'').trim()?`Арт. ${String(p.reference).trim()}`:null;
 const jewelryBrand=p=>['Cartier','Van Cleef & Arpels','Messika'].includes(p.brand);
 // A collection/model is a filter, not the identity of a jewel. Keep the full
 // source product name (width, size and collection), translating only known nouns.
@@ -13,7 +14,7 @@ export function productTitle(p){
   // Watches retain the exact variant name, not just the collection. Category
   // labels are presentation only: they never establish source/reference identity.
   if(categoryOf(p)==='watches'){
-    const variant=String(p.name||p.model||'').replace(/\b(?:watches|watch|orologi|orologio)\b/gi,'').replace(/\bautomatico\b/gi,'автоматические').replace(/\bmm\b/gi,'мм').replace(/\s+/g,' ').trim();
+    const variant=String(p.name||p.model||'').replace(/&ndash;/gi,'–').replace(/\b(?:watches|watch|orologi|orologio)\b/gi,'').replace(/\bautomatico\b/gi,'автоматические').replace(/\bmm\b/gi,'мм').replace(/\s+/g,' ').trim();
     return /^Часы(?:\s|$)/i.test(variant)?variant:`Часы${variant?' '+variant:''}`;
   }
   if(!jewelryBrand(p))return modelName(p);
