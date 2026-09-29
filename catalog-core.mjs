@@ -18,8 +18,26 @@ export function productTitle(p){
   }
   if(!jewelryBrand(p))return modelName(p);
   let text=p.name||p.model||'';
-  for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelet/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
-  if(p.brand==='Messika')for(const [pattern,replacement] of [[/con cordino/gi,'на шнурке'],[/con pavé/gi,'с паве'],[/con diamanti/gi,'с бриллиантами'],[/\bnero\b/gi,'чёрный'],[/\bgiallo\b/gi,'жёлтый'],[/\bturchese\b/gi,'бирюзовый']])text=text.replace(pattern,replacement);
+  if(p.brand==='Messika')for(const [pattern,replacement] of [
+    [/\bBracciale rigido\b/gi,'Жёсткий браслет'],[/\bAnello chevalier\b/gi,'Кольцо-печатка'],
+    [/\bAnello rivière\b/gi,'Кольцо-дорожка'],[/\bCollana rivière\b/gi,'Колье-ривьера'],
+    [/\bCollana (?:choker|girocollo)\b/gi,'Колье-чокер'],[/\bCollana cravatta\b/gi,'Колье-галстук'],
+    [/\bCollana So Move pavé/gi,'Колье So Move с паве'],
+    [/\bOrecchini (?:pendenti|a cerchio)\b/gi,match=>match.toLowerCase().includes('pendenti')?'Серьги-подвески':'Серьги-кольца'],
+    [/\bOrecchini multiformi\b/gi,'Серьги разных форм'],
+    [/^(.+?) pavé stud earrings$/i,(_,model)=>`Серьги-пусеты ${model} с паве`],
+    [/^(.+?) asymmetrical earrings$/i,(_,model)=>`Асимметричные серьги ${model}`],
+    [/^(.+?) bracelet$/i,(_,model)=>`Браслет ${model}`]
+  ])text=text.replace(pattern,replacement);
+  for(const [pattern,replacement] of [[/fede nuziale|wedding band|\bfede\b/gi,'Обручальное кольцо'],[/collana|necklace/gi,'Колье'],[/catena/gi,'Цепочка'],[/pendente|pendant/gi,'Подвеска'],[/bracciale|bracelets?/gi,'Браслет'],[/orecchini|earrings/gi,'Серьги'],[/anello|\bring\b/gi,'Кольцо'],[/\bwatch\b/gi,'Часы'],[/small model|modello piccolo/gi,'малая модель'],[/medium model|modello medio/gi,'средняя модель'],[/large model|modello grande/gi,'большая модель'],[/\bwidth\b/gi,'ширина'],[/\bmm\b/gi,'мм'],[/\bcm\b/gi,'см']])text=text.replace(pattern,replacement);
+  if(p.brand==='Messika')for(const [pattern,replacement] of [
+    [/con cordino/gi,'на шнурке'],[/con semi pavé/gi,'с частичным паве'],[/con charm e pavé/gi,'с подвеской и паве'],
+    [/con charm/gi,'с подвеской'],[/con pavé/gi,'с паве'],[/con diamanti/gi,'с бриллиантами'],
+    [/con madreperla bianca/gi,'с белым перламутром'],[/con malachite/gi,'с малахитом'],
+    [/modello mini/gi,'мини-модель'],[/\bcesellat[oa]\b/gi,'с чеканкой'],
+    [/\bantracite\b/gi,'антрацитового цвета'],[/\bnero\b/gi,'чёрного цвета'],[/\bgiallo\b/gi,'жёлтого цвета'],
+    [/\bturchese\b/gi,'бирюзового цвета'],[/\brosa\b/gi,'розового цвета'],[/\barancione\b/gi,'оранжевого цвета']
+  ])text=text.replace(pattern,replacement);
   return text.trim();
 }
 export function jewelryMaterial(p){

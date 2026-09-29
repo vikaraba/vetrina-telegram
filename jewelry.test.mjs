@@ -37,7 +37,7 @@ test('jewelry contact keeps reference and ring size without shoe EU notation',()
 });
 test('Messika uses the same catalog and Russian jewelry rules without invented price or material',()=>{
   const messika={id:4,brand:'Messika',name:'BRACCIALE CON CORDINO MESSIKA CARE(S) GIALLO',model:'Messika CARE(S)',category:'Bracciale',reference:'14659-WG',priceAmount:null,priceCurrency:null,description:'Bracciale con cordino giallo in oro bianco'};
-  assert.equal(productTitle(messika),'Браслет на шнурке MESSIKA CARE(S) жёлтый');
+  assert.equal(productTitle(messika),'Браслет на шнурке MESSIKA CARE(S) жёлтого цвета');
   assert.equal(categoryOf(messika),'bracelets');
   assert.equal(jewelryMaterial(messika),'Белое золото');
   assert.equal(validPrice(messika),false);

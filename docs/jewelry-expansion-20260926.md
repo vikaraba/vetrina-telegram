@@ -73,6 +73,16 @@ simulato, non prova di sessione Telegram firmata, iPhone fisico, media Messika i
 prestazioni cold/warm o deploy Pages. Le foto Messika vengono intercettate
 nel browser QA e fornite dall'archivio locale: non sono ancora in Storage.
 
+Audit aggiuntivo del testo cliente sull'archivio ufficiale Messika:
+`node scripts/audit-messika-copy.mjs <verified-catalog.json>` ha verificato
+**87/87 titoli senza termini generici italiani/inglesi residui** e la ricerca
+russa per tutte le quattro categorie riconosciute: 33 anelli, 21 bracciali,
+21 collane/pendenti e 11 orecchini. La scheda restante ha categoria fonte
+`unknown`: nessuna categoria viene inventata e non è pronta all'attivazione.
+Le collezioni e la referenza separata restano intatte; l'audit non traduce
+descrizioni marketing né certifica prezzo, stock o readiness. Regressioni
+su frasi rappresentative e browser UAT misto sono passati dopo la modifica.
+
 - VCA: 170 schede tecnicamente eleggibili. Primo gruppo di 7 con prezzi manuali
   esistenti preservati: fonti ufficiali ricontrollate il 26/09, prezzo fonte
   invariato, gallerie complete, disponibilità osservata (non garanzia stock).
