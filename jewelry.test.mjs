@@ -8,6 +8,19 @@ const vca={id:3,brand:'Van Cleef & Arpels',name:'Fede nuziale Toujours, 2,5 mm',
 test('all imported Cartier and Van Cleef category aliases have Russian labels',()=>{
   for(const category of ['Wedding band','Bracelet','Steel Watches','Earrings','Pendants','Ring','Necklace','Nozze','Gioielleria','necklaces_and_pendants','bracelets','rings','earrings'])assert.match(categoryLabel(categoryOf({category})),/[А-Яа-я]/);
 });
+test('Russian singular CRM categories share canonical facets with Italian jewelry categories',()=>{
+  const pairs=[['колье','Collana','necklaces'],['кольцо','Anello','rings'],['подвеска','Pendente','pendants'],['серьги','Orecchini','earrings'],['браслет','Bracciale','bracelets']];
+  for(const [russian,italian,canonical] of pairs){
+    assert.equal(categoryOf({category:russian}),canonical);
+    assert.equal(categoryOf({category:italian}),canonical);
+  }
+  const products=[
+    {id:10,brand:'Messika',category:'кольцо',name:'Кольцо Move Uno',reference:'RU-RING'},
+    {id:11,brand:'Messika',category:'Anello',name:'Anello Move Uno',reference:'IT-RING'},
+  ];
+  assert.equal(facets(products,blankFilters(),'','category').find(({value})=>value==='rings').count,2);
+  assert.deepEqual(filterProducts(products,{...blankFilters(),category:'rings'},'кольцо').map(({id})=>id),[10,11]);
+});
 test('jewelry title preserves actual product identity, model remains a filter',()=>{
   assert.equal(productTitle(ring),'1895 Обручальное кольцо, 2.5 мм ширина');
   assert.equal(productTitle(vca),'Обручальное кольцо Toujours, 2,5 мм');

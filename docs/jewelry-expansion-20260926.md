@@ -108,6 +108,18 @@ e **52 ms Mac simulato**, massimi 183 e 59 ms. Sono tempi del preview locale
 con API simulata, non prestazioni del backend o dei dispositivi fisici; manca
 ancora il confronto baseline/candidato cold/warm richiesto per il rilascio.
 
+### Alias delle categorie russe — controllo 29 settembre
+
+Cinque schede Messika nel CRM usano la categoria russa singolare `колье`,
+`кольцо`, `подвеска`, `серьги` o `браслет`. Il codice precedente lasciava
+questi valori come faccette autonome, separate dalle categorie italiane
+equivalenti. Il candidato ora normalizza solo questi cinque alias nelle
+categorie canoniche già esistenti. Una regressione verifica per ciascuna
+coppia l'identità della faccetta e, per gli anelli, il conteggio e la ricerca
+`кольцо` attraverso un prodotto italiano e uno russo. Node 24 `npm run verify`
+passa 59/59 test e ricostruisce sei asset pubblici; la prova è locale e non
+dimostra il filtro su dati cliente live o la UAT fisica.
+
 - VCA: 170 schede tecnicamente eleggibili. Primo gruppo di 7 con prezzi manuali
   esistenti preservati: fonti ufficiali ricontrollate il 26/09, prezzo fonte
   invariato, gallerie complete, disponibilità osservata (non garanzia stock).
