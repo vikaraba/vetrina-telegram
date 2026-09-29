@@ -56,6 +56,15 @@ export function filterProducts(products,filters=blankFilters(),query='',exclude=
     return true;
   });
 }
+export function priceFilterHint(products,filters=blankFilters(),query=''){
+  const pool=filterProducts(products,filters,query,'price');
+  if(!pool.length)return 'Нет товаров по текущему запросу';
+  const priced=pool.filter(validPrice);
+  const onRequest=pool.some(p=>p.priceMode==='on_request');
+  const range=priced.length?`${Math.min(...priced.map(p=>p.priceAmount)).toLocaleString('ru')} – ${Math.max(...priced.map(p=>p.priceAmount)).toLocaleString('ru')} ₽`:'';
+  if(onRequest)return `${range?range+' · ':''}Товары «Цена по запросу» не входят в фильтр по сумме.`;
+  return range||'Цена этих товаров уточняется';
+}
 export function facets(products,filters,query,key){
   const pool=filterProducts(products,filters,query,key),counts=new Map();
   for(const p of pool)for(const value of valuesFor(p,key))counts.set(value,(counts.get(value)||0)+1);

@@ -45,6 +45,21 @@ baseline/candidato a cache fredda/calda: la velocità non è dichiarata PASS.
 
 ## Stato dati e blocchi di attivazione
 
+### UAT locale Messika 29 settembre — PR #17
+
+Con fixture customer-only `14142-WG` e tre JPEG ufficiali locali verificati
+per SHA256, apertura diretta `product_115` e percorso dettaglio → seconda foto
+→ zoom 150% → bozza ordine simulata → altri modelli → ricerca SKU → filtri
+esercitati nel browser a 430×932 e 1440×900. Il prezzo resta
+`Цена по запросу`; la bozza include referenza e colore in russo, chiede
+disponibilità/prezzo finale e non invia messaggi. Nessun overflow orizzontale
+osservato nel percorso. Il pannello filtri inizialmente indicava erroneamente
+«Нет товаров по текущему запросу» pur mostrando un prodotto Messika: corretto
+per spiegare che questi articoli sono visibili ma esclusi da un limite RUB.
+Regressione dedicata e `npm run verify` 53/53 PASS. Questo è collaudo locale
+simulato, non prova di sessione Telegram firmata, iPhone fisico, Storage live,
+prestazioni cold/warm o deploy Pages.
+
 - VCA: 170 schede tecnicamente eleggibili. Primo gruppo di 7 con prezzi manuali
   esistenti preservati: fonti ufficiali ricontrollate il 26/09, prezzo fonte
   invariato, gallerie complete, disponibilità osservata (non garanzia stock).

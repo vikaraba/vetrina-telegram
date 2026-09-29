@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {categoryOf,categoryLabel,productTitle,jewelryMaterial,blankFilters,filterProducts,facets,modelName,validPrice} from './catalog-core.mjs';
+import {categoryOf,categoryLabel,productTitle,jewelryMaterial,blankFilters,filterProducts,facets,modelName,validPrice,priceFilterHint} from './catalog-core.mjs';
 import {contactUrl} from './storefront-api.mjs';
 const ring={id:1,brand:'Cartier',name:'1895 wedding band, 2.5 mm width',model:'1895',category:'Wedding band',reference:'TEST-RING',priceAmount:80000,priceCurrency:'RUB',description:'18K yellow gold (750/1000)',sizes:[{value:'52'}]};
 const pendant={id:2,brand:'Cartier',name:'Symbol pendant',model:'Symbols',category:'Pendants',reference:'TEST-PENDANT',priceAmount:75000,priceCurrency:'RUB',description:'18K white gold (750/1000)',sizes:[]};
@@ -55,4 +55,12 @@ test('Messika contact translates a known color and asks for the final price in c
   assert.match(text,/цвет Чёрный/);
   assert.match(text,/итоговую стоимость/);
   assert.doesNotMatch(text,/Nero|\d+ ₽/);
+});
+test('price filter hint distinguishes on-request products from an empty result',()=>{
+  const messika={id:4,brand:'Messika',name:'Messika Care',priceMode:'on_request',priceAmount:null,priceCurrency:null};
+  assert.match(priceFilterHint([messika],blankFilters()),/Цена по запросу/);
+  assert.doesNotMatch(priceFilterHint([messika],blankFilters()),/Нет товаров/);
+  assert.match(priceFilterHint([ring,messika],blankFilters()),/80\s?000.*Цена по запросу/);
+  assert.equal(priceFilterHint([messika],blankFilters(),'несуществующая модель'),'Нет товаров по текущему запросу');
+  assert.equal(filterProducts([messika],{...blankFilters(),maxPrice:'80000'}).length,0);
 });
