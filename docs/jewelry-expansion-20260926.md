@@ -46,6 +46,28 @@ baseline/candidato a cache fredda/calda: la velocità non è dichiarata PASS.
 
 ## Stato dati e blocchi di attivazione
 
+### UAT multibrand del candidato 30 settembre
+
+Sul candidato Mini App della PR #17, il preview locale ha caricato 102 DTO di
+fixture (85 Messika, 3 Cartier, 14 Chopard) in due pagine simulate. Il client
+ha mostrato 88 schede: le 14 Chopard senza prezzo cliente RUB sono rimaste
+nascoste anche dalla home. Un link diretto alla Chopard 4156 mostra ora
+«Модель недоступна» e il pulsante per tornare ai modelli, non un errore
+generico di caricamento. La stessa prova ha preservato Messika
+«Цена по запросу», le tre foto della canary 115, cambio foto, zoom 150% e la
+bozza d'ordine verso `@buyer_rome` con referenza 14142-WG, senza invio.
+
+Il preview verifica prima dell'avvio byte e SHA-256 di tutte le 445 immagini
+`qa/` dei fixture. Intercetta solo queste immagini locali; le copertine
+Cartier già pubbliche conservano l'URL Storage reale e le tre testate hanno
+caricato a 1600 px. A 430×932 e 1440×900 non è stato osservato overflow
+orizzontale nelle schermate provate; la prima pagina Messika su Mac aveva
+12/12 immagini caricate. I prezzi Cartier presenti nel fixture sono importi
+di prova non approvati: non costituiscono autorizzazione commerciale né prova
+di pubblicabilità. Il test usa trasporto API e Telegram simulati, non una
+sessione firmata né dispositivi fisici; non prova latenza reale o Storage in
+produzione per Messika.
+
 ### UAT locale Messika e catalogo misto 29 settembre — PR #17
 
 Con fixture customer-only `14142-WG` e tre JPEG ufficiali locali verificati

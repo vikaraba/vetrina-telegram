@@ -25,7 +25,13 @@ $('#theme').onclick=()=>setTheme(state.theme==='light'?'dark':'light');setTheme(
 tg?.onEvent?.('themeChanged',()=>setTheme(tg.colorScheme==='dark'?'dark':'light'));
 tg?.BackButton?.onClick?.(()=>{const open=[...document.querySelectorAll('dialog[open]')].at(-1);if(open)open.close();else if(state.product)showCatalog({restore:true});else if(state.page==='catalog')showHome();});
 function navigationUrl(id){const url=new URL(location.href);if(id)url.searchParams.set('product',id);else url.searchParams.delete('product');return url.pathname+url.search+url.hash;}
-function errorScreen(error,retry){document.body.classList.remove('has-product');$('#app').innerHTML=`<div class="empty-state" role="alert"><h2>${error?.status===401?'Откройте каталог в Telegram':'Не удалось загрузить каталог'}</h2><p>${escapeHtml(error?.message||'Проверьте соединение и попробуйте ещё раз.')}</p><button id="retry-load" class="primary">${error?.status===401?'Открыть в Telegram':'Попробовать снова'}</button><button id="error-catalog" class="text-button">К брендам</button></div>`;$('#retry-load').onclick=error?.status===401?()=>{if(tg?.openTelegramLink)tg.openTelegramLink(MINI_APP_URL);else location.href=MINI_APP_URL;}:retry;$('#error-catalog').onclick=()=>showHome();}
+function errorScreen(error,retry){
+  const expired=error?.status===401,unavailable=error?.status===404;
+  document.body.classList.remove('has-product');
+  $('#app').innerHTML=`<div class="empty-state" role="alert"><h2>${expired?'Откройте каталог в Telegram':unavailable?'Модель недоступна':'Не удалось загрузить каталог'}</h2><p>${escapeHtml(error?.message||'Проверьте соединение и попробуйте ещё раз.')}</p><button id="retry-load" class="primary">${expired?'Открыть в Telegram':unavailable?'Смотреть другие модели':'Попробовать снова'}</button>${unavailable?'':'<button id="error-catalog" class="text-button">К брендам</button>'}</div>`;
+  $('#retry-load').onclick=expired?()=>{if(tg?.openTelegramLink)tg.openTelegramLink(MINI_APP_URL);else location.href=MINI_APP_URL;}:unavailable?()=>showHome():retry;
+  if(!unavailable)$('#error-catalog').onclick=()=>showHome();
+}
 
 
 function results(filters=state.filters){

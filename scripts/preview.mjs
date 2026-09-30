@@ -18,6 +18,20 @@ if(sources.some(source=>!Array.isArray(source)))throw Error('Every UAT fixture m
 const raw=sources.flat();
 if(new Set(raw.map(product=>product.id)).size!==raw.length)throw Error('Duplicate product ID across UAT fixtures');
 const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
+// Validate every local QA image before opening the preview, not just the ones
+// visible on the first page. Public CRM paths are intentionally left alone.
+const qaMedia=new Set(products.flatMap(product=>[product.imagePath,...(product.images||[]).map(image=>image?.path)]).filter(path=>typeof path==='string'&&path.startsWith('qa/')));
+for(const path of qaMedia){
+  const match=/^qa\/([a-f0-9]{64})[.]jpg$/.exec(path);
+  if(!match)throw Error('Invalid QA image path: '+path);
+  let bytes;
+  for(const root of mediaRoots){
+    try{bytes=await readFile(join(root,match[1]+'.jpg'));break;}
+    catch(error){if(error.code!=='ENOENT')throw error;}
+  }
+  if(!bytes)throw Error('Missing QA image: '+path);
+  if(createHash('sha256').update(bytes).digest('hex')!==match[1])throw Error('QA image checksum mismatch: '+path);
+}
 const setup=`
 const originalFetch=window.fetch.bind(window);
 const params=new URLSearchParams(location.search);
@@ -82,7 +96,14 @@ http.createServer(async(req,res)=>{
    if(!assets.has(name)){res.writeHead(404);res.end();return;}
    let content=await readFile(new URL(name,root),'utf8');
    if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260930-compatible-filters"','src="/__qa/setup.js"');
-   if(name==='app.js'&&mediaRoots.length)content=content.replace('https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/public/product-images/','/__qa/media/');
+   // Only QA fixture paths are served from local, hash-verified archives.
+   // Existing public CRM media keep their real URL in mixed-brand UAT.
+   if(name==='app.js'&&mediaRoots.length){
+     const publicRoot="'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/public/product-images/'";
+     const source=publicRoot+'+escapeHtml(i.path';
+     if(!content.includes(source))throw Error('UAT media override no longer matches the app');
+     content=content.replace(source,"(i.path.startsWith('qa/')?'/__qa/media/':"+publicRoot+")+escapeHtml(i.path");
+   }
    res.setHeader('Content-Type',name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.css')?'text/css':'text/javascript');res.end(content);
  }catch{res.writeHead(500);res.end('Local UAT failed');}
-}).listen(port,'127.0.0.1',()=>console.log('Local staging UAT: http://127.0.0.1:'+port+'/vetrina-telegram/ · assets: '+root.pathname));
+}).listen(port,'127.0.0.1',()=>console.log('Local staging UAT: http://127.0.0.1:'+port+'/vetrina-telegram/ · assets: '+root.pathname+' · verified local images: '+qaMedia.size));
