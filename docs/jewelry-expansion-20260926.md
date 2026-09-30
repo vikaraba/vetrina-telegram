@@ -12,7 +12,8 @@ CRM source dell'audit aggiornato: 3934dfc2ac3a36f666962007d42d2bfd46de48dd.
   inferita e nessuna descrizione marketing usata come materiale.
 - Ricerca russa dei nuovi titoli; filtri modello e SKU invariati.
 - Messika usa lo stesso contratto gioielli: nessun prezzo, materiale o stock
-  inventato. Le schede senza prezzo RUB valido non diventano pubblicabili.
+  inventato. Per le schede senza prezzo cliente RUB la scelta commerciale
+  confermata è `Цена по запросу`, con prezzo finale confermato in chat.
 - Entry point, modulo ordini e modulo catalogo hanno una versione cache coerente.
 - Preview locale con porta configurabile, per non interrompere altre anteprime.
 - Homepage brand e griglia proporzionale della PR #13, colori, foto/zoom,
@@ -45,6 +46,128 @@ baseline/candidato a cache fredda/calda: la velocità non è dichiarata PASS.
 
 ## Stato dati e blocchi di attivazione
 
+### Confronto di reattività locale del candidato, 30 settembre
+
+Il preview UAT ora espone tre marcatori osservabili: home visibile, dettaglio
+visibile e immagine principale caricata (oppure fallita). La strumentazione è
+solo in `scripts/preview.mjs`, fuori dai sei asset pubblici. Il server legge la
+versione dell'entrypoint dal build selezionato: lo stesso fixture da 117 DTO
+(67 ON, 50 LV) è stato provato su `origin/main`
+`6af666fad98cfa3786a4ee7ed771137a02884822` e sul candidato
+`193ea0d36fc738ea416ff48f72dcdcb44bfe1302`. Cinque reload per percorso
+e viewport, nel browser locale; tempi mediani da `performance.now()`, in ms:
+
+| Percorso | 430×932 baseline → candidato | 1440×900 baseline → candidato |
+| --- | ---: | ---: |
+| Home visibile | 40,5 → 42,5 | 55,8 → 55,9 |
+| Dettaglio ON 343 visibile | 32,0 → 30,9 | 34,2 → 39,2 |
+| Foto principale ON 343 caricata | 114,3 → 139,1 | 138,2 → 126,3 |
+
+I sei asset statici sommano 27.985 → 29.946 byte gzip (+1.961). La mediana
+foto su 430×932 peggiora, mentre su 1440×900 migliora, con la stessa immagine
+pubblica e forte variabilità del primo campione: il risultato è **inconcludente**,
+non un gate prestazionale PASS. Il preview usa API/Telegram simulati,
+`Cache-Control: no-store` e non separa in modo affidabile cold/warm; non misura
+una sessione firmata, la reattività CRM/Supabase reale né un iPhone fisico.
+Prima del rilascio occorre ripetere sullo SHA finale con dati e media staging,
+baseline comparabile e UAT browser autenticata secondo il gate vigente.
+
+### UAT multibrand del candidato 30 settembre
+
+Sul candidato Mini App della PR #17, il preview locale ha caricato 102 DTO di
+fixture (85 Messika, 3 Cartier, 14 Chopard) in due pagine simulate. Il client
+ha mostrato 88 schede: le 14 Chopard senza prezzo cliente RUB sono rimaste
+nascoste anche dalla home. Un link diretto alla Chopard 4156 mostra ora
+«Модель недоступна» e il pulsante per tornare ai modelli, non un errore
+generico di caricamento. La stessa prova ha preservato Messika
+«Цена по запросу», le tre foto della canary 115, cambio foto, zoom 150% e la
+bozza d'ordine verso `@buyer_rome` con referenza 14142-WG, senza invio.
+
+Il preview verifica prima dell'avvio byte e SHA-256 di tutte le 445 immagini
+`qa/` dei fixture. Intercetta solo queste immagini locali; le copertine
+Cartier già pubbliche conservano l'URL Storage reale e le tre testate hanno
+caricato a 1600 px. A 430×932 e 1440×900 non è stato osservato overflow
+orizzontale nelle schermate provate; la prima pagina Messika su Mac aveva
+12/12 immagini caricate. I prezzi Cartier presenti nel fixture sono importi
+di prova non approvati: non costituiscono autorizzazione commerciale né prova
+di pubblicabilità. Il test usa trasporto API e Telegram simulati, non una
+sessione firmata né dispositivi fisici; non prova latenza reale o Storage in
+produzione per Messika.
+
+### UAT locale Messika e catalogo misto 29 settembre — PR #17
+
+Con fixture customer-only `14142-WG` e tre JPEG ufficiali locali verificati
+per SHA256, apertura diretta `product_115` e percorso dettaglio → seconda foto
+→ zoom 150% → bozza ordine simulata → altri modelli → ricerca SKU → filtri
+esercitati nel browser a 430×932 e 1440×900. Il prezzo resta
+`Цена по запросу`; la bozza include referenza e colore in russo, chiede
+disponibilità/prezzo finale e non invia messaggi. Nessun overflow orizzontale
+osservato nel percorso. Il pannello filtri inizialmente indicava erroneamente
+«Нет товаров по текущему запросу» pur mostrando un prodotto Messika: corretto
+per spiegare che questi articoli sono visibili ma esclusi da un limite RUB.
+Regressione dedicata e `npm run verify` 53/53 PASS. Un secondo collaudo della
+stessa revisione usa 40 DTO fixture di 5 brand (Cartier, Louis Vuitton,
+Messika, On, Van Cleef & Arpels) e le foto Cartier già pubbliche in Storage.
+Su 430×932 e 1440×900: cinque ingressi brand, tre foto Messika, due orologi
+nel filtro Cartier, cinque foto del Tank WSTA0136 e immagine hero da 1600 px;
+nessuna immagine fallita, errore JavaScript o overflow orizzontale. Il titolo
+degli orologi presenta `Часы` prima della variante, mantenendo modello e
+referenza. La revisione visiva della home su entrambi i formati ha confermato
+cinque card brand leggibili e copertine caricate; ha rilevato un riquadro di
+focus non necessario sul titolo iniziale, ora rimosso soltanto per quel titolo
+non interattivo. Il preview locale accetta fixture aggiuntive soltanto per UAT,
+senza includerle nei sei asset di produzione. Questo è collaudo locale
+simulato, non prova di sessione Telegram firmata, iPhone fisico, media Messika in Storage,
+prestazioni cold/warm o deploy Pages. Le foto Messika vengono intercettate
+nel browser QA e fornite dall'archivio locale: non sono ancora in Storage.
+
+Audit aggiuntivo del testo cliente sull'archivio ufficiale Messika:
+`node scripts/audit-messika-copy.mjs <verified-catalog.json>` ha verificato
+**87/87 titoli senza termini generici italiani/inglesi residui** e la ricerca
+russa per tutte le quattro categorie riconosciute: 33 anelli, 21 bracciali,
+21 collane/pendenti e 11 orecchini. La scheda restante ha categoria fonte
+`unknown`: nessuna categoria viene inventata e non è pronta all'attivazione.
+Le collezioni e la referenza separata restano intatte; l'audit non traduce
+descrizioni marketing né certifica prezzo, stock o readiness. Regressioni
+su frasi rappresentative e browser UAT misto sono passati dopo la modifica.
+Sul fixture locale non-ON sono stati inoltre verificati 37 titoli Cartier/VCA:
+corretti tre residui generici (`single hoop earring`, `Symbol pendant`,
+`modello mini`) senza alterare i nomi delle collezioni. Zero residui di quei
+termini nel fixture; non equivale a un audit di tutte le schede CRM Cartier/VCA.
+
+### Prova di scala locale — 124 schede, 29 settembre
+
+Una fixture privata derivata dall'archivio ufficiale aggiunge 84 Messika
+alla canary già presente e alle 39 schede degli altri brand: **124 DTO** in
+cinque brand. Restano esclusi 129 (URL CRM incoerente) e 219 (categoria
+`unknown` nell'archivio storico); la correzione del parser 219 richiede
+un nuovo manifest. Lo script `scripts/build-messika-uat-fixture.mjs` produce
+solo DTO cliente sintetici con `Цена по запросу`, nessun prezzo ufficiale EUR,
+fonte o dato interno, e scrive con creazione esclusiva in un percorso privato.
+Non è un comando di import o pubblicazione.
+
+Browser locale 430×932 e 1440×900: due pagine API simulate (offset 0 e 100),
+cinque ingressi brand, 85 Messika, ricerca russa `кольцо` → 32 risultati,
+filtro anelli, scheda con tre foto ufficiali locali e prezzo su richiesta.
+Zero errori JavaScript, foto fallite o overflow; nessun colore fittizio sotto
+il titolo quando manca il campo fonte. Cinque aperture in contesti browser
+nuovi per formato hanno mostrato la home con mediana **56 ms iPhone simulato**
+e **52 ms Mac simulato**, massimi 183 e 59 ms. Sono tempi del preview locale
+con API simulata, non prestazioni del backend o dei dispositivi fisici; manca
+ancora il confronto baseline/candidato cold/warm richiesto per il rilascio.
+
+### Alias delle categorie russe — controllo 29 settembre
+
+Cinque schede Messika nel CRM usano la categoria russa singolare `колье`,
+`кольцо`, `подвеска`, `серьги` o `браслет`. Il codice precedente lasciava
+questi valori come faccette autonome, separate dalle categorie italiane
+equivalenti. Il candidato ora normalizza solo questi cinque alias nelle
+categorie canoniche già esistenti. Una regressione verifica per ciascuna
+coppia l'identità della faccetta e, per gli anelli, il conteggio e la ricerca
+`кольцо` attraverso un prodotto italiano e uno russo. Node 24 `npm run verify`
+passa 59/59 test e ricostruisce sei asset pubblici; la prova è locale e non
+dimostra il filtro su dati cliente live o la UAT fisica.
+
 - VCA: 170 schede tecnicamente eleggibili. Primo gruppo di 7 con prezzi manuali
   esistenti preservati: fonti ufficiali ricontrollate il 26/09, prezzo fonte
   invariato, gallerie complete, disponibilità osservata (non garanzia stock).
@@ -52,9 +175,10 @@ baseline/candidato a cache fredda/calda: la velocità non è dichiarata PASS.
   prezzo calcolato fonte discordanti. Richiesta riconciliazione canonica prima
   dell'attivazione; questa PR non aggiorna né arrotonda prezzi salvati.
 - Messika: 115 schede, zero prezzi cliente RUB; 87 URL ufficiali individuati.
-  Le poche immagini approvate esistenti provengono da import Telegram privati:
-  non renderle pubbliche. Servono regola commerciale, import fonte ufficiale e
-  media pubblici approvati, usando il CRM come unica fonte.
+  La regola `Цена по запросу` è stata confermata, ma non sostituisce import
+  fonte ufficiale e media pubblici approvati. Le poche immagini approvate
+  esistenti provengono da import Telegram privati: non renderle pubbliche.
+  Il CRM resta l'unica fonte del catalogo.
 
 **Draft, non ancora rilasciata.** Restano raccolta prestazioni, verifica Telegram
 reale, coordinamento con il proprietario del rilascio CRM e attivazione per

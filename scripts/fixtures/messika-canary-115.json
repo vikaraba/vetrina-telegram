@@ -1,0 +1,31 @@
+[
+  {
+    "id": 115,
+    "name": "Collana con cordino Messika Care(s) nero con pavé",
+    "brand": "Messika",
+    "category": "necklaces_and_pendants",
+    "model": "Messika Care(s)",
+    "color": "Nero",
+    "gender": "unisex",
+    "reference": "14142-WG",
+    "sourceId": "messika_it",
+    "priceMode": "on_request",
+    "priceAmount": null,
+    "priceCurrency": null,
+    "imageBucket": "product-images",
+    "imagePath": "qa/cc4dbf5018a6f61a0bc0b08c305ad3b1d3a5334d82ec0afecaa4527a4ef0728d.jpg",
+    "images": [
+      {
+        "bucket": "product-images",
+        "path": "qa/c0ba78721bc16964718576eb8b5596955210875fdd3ee308c01f619057b120b9.jpg"
+      },
+      {
+        "bucket": "product-images",
+        "path": "qa/d5f54362ad7f6c415ad74adb318e5edea94bd8eeef78e76993b71bce9be5b36b.jpg"
+      }
+    ],
+    "sizes": [],
+    "description": "Oro bianco e Diamante",
+    "telegramPostUrl": null
+  }
+]

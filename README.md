@@ -26,7 +26,10 @@ Ogni richiesta invia `x-telegram-init-data` e contesto client versionato
 `telegram-webapp-client-v1`. Il secondo è `client_reported`, non identità.
 Nessuna persistenza applicativa di questi dati in localStorage/cookie.
 
-Prezzo cliente soltanto RUB positivo, altrimenti “Цена уточняется”.
+Prezzo cliente soltanto RUB positivo. La sola modalità esplicita Messika
+`priceMode=on_request`, con importo cliente assente, mostra “Цена по запросу”
+e conferma il prezzo nella chat; ogni altro importo mancante o incoerente
+mostra “Цена уточняется”. Il prezzo ufficiale EUR non viene esposto.
 La scelta della misura non dichiara stock: conferma esplicita nel roller,
 `size-interest`, polling `size-status`, poi disponibile/non disponibile/
 da chiarire/errore. Timeout e risultati tardivi non possono confermare una

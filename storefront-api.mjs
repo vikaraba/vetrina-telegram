@@ -1,4 +1,5 @@
 // Existing authenticated Edge contract. Never persist or put initData in a URL.
+import {colorLabel} from './catalog-core.mjs';
 export const API_BASE='https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront';
 export const MINI_APP_URL='https://t.me/aerofeevaBot/katalog';
 export function randomUuid(){
@@ -25,7 +26,25 @@ export class StorefrontError extends Error{
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+  const onRequest=raw.priceMode==='on_request'&&brand==='Messika'&&priceAmount==null&&priceCurrency==null;
+  const inconsistent=raw.priceMode==='on_request'&&!onRequest;
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
+    priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
+    priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,
+    telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+}
+export function isCustomerVisibleProduct(raw){
+  // These brands have no on-request exception: a missing or non-RUB customer
+  // price must not become an orderable card if an older API leaks the row.
+  const brand=String(raw?.brand||'').trim().toLowerCase();
+  if(brand!=='cartier'&&brand!=='chopard')return true;
+  return raw.priceMode!=='on_request'&&raw.priceCurrency==='RUB'&&
+    Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;
+}
+export function customerPriceLabel(product){
+  if(product.priceMode==='on_request'&&product.brand==='Messika'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
+  return product.priceCurrency==='RUB'&&Number.isFinite(product.priceAmount)&&product.priceAmount>0
+    ?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(product.priceAmount)+' ₽':'Цена уточняется';
 }
 export function telegramPostUrl(value){
   // Accept message permalinks only, never a source website, profile, invite or launch URL.
@@ -69,9 +88,9 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
         if(offset>10000)throw new StorefrontError(0);
       }
       if(items.size!==total)throw new StorefrontError(0);
-      return [...items.values()];
+      return [...items.values()].filter(isCustomerVisibleProduct);
     },
-    async product(id){return normalizeProduct(await api('product',{id}));},
+    async product(id){const raw=await api('product',{id});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },
@@ -104,7 +123,7 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
 export function contactUrl(product,size){
   const post=telegramPostUrl(product.telegramPostUrl);
   const message='Анастасия, здравствуйте!\n\nМеня интересует '+product.brand+' '+product.name+
-    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+product.color:'')+'.'+
+    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+colorLabel(product.color):'')+'.'+
     (size?'\nРазмер '+(product.category==='shoes'?'EU ':'')+size+'.':'')+
     '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!'+
     (post?'\n\nПубликация в каталоге:\n'+post:'');
