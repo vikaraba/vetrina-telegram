@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {productTitle,modelName,filterProducts,blankFilters,facets} from './catalog-core.mjs';
+import {productTitle,modelName,filterProducts,blankFilters,facets,setFilter} from './catalog-core.mjs';
 
 const messika=name=>productTitle({brand:'Messika',category:'jewelry',name});
 test('Messika customer titles translate generic types without changing collection names',()=>{
@@ -35,4 +35,24 @@ test('Messika model filter groups official collections instead of Italian produc
     [['Messika Care(s)',2],['Move Uno',1]]);
   assert.deepEqual(filterProducts(products,{...blankFilters(),model:'Messika Care(s)'}).map(p=>p.id),[1,2]);
   assert.equal(modelName({brand:'Cartier',name:'Tank Must de Cartier watch'}),'Tank Must de Cartier watch');
+});
+
+test('changing category retains a compatible Messika model and clears only incompatible children',()=>{
+  const products=[
+    {id:1,brand:'Messika',category:'rings',name:'Anello Move Uno con pavé',color:'Bianco'},
+    {id:2,brand:'Messika',category:'bracelets',name:'Bracciale Messika Care(s)',color:'Giallo'},
+    {id:3,brand:'Cartier',category:'rings',name:'LOVE ring',model:'LOVE',color:'Bianco'},
+  ];
+  const base={...blankFilters(),brand:'Messika',model:'Move Uno',color:'Giallo'};
+  const rings=setFilter(base,'category','rings',products);
+  assert.equal(rings.model,'Move Uno');
+  assert.equal(rings.color,'all');
+  assert.deepEqual(filterProducts(products,rings).map(p=>p.id),[1]);
+  const bracelets=setFilter(base,'category','bracelets',products);
+  assert.equal(bracelets.model,'all');
+  assert.equal(bracelets.color,'Giallo');
+  assert.deepEqual(filterProducts(products,bracelets).map(p=>p.id),[2]);
+  const cartier=setFilter({...blankFilters(),brand:'Messika',model:'Move Uno'},'brand','Cartier',products);
+  assert.equal(cartier.model,'all');
+  assert.deepEqual(filterProducts(products,cartier).map(p=>p.id),[3]);
 });

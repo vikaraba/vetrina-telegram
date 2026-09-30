@@ -107,9 +107,20 @@ export function facets(products,filters,query,key){
   if(filters[key]!=='all'&&!counts.has(filters[key]))counts.set(filters[key],0);
   return [...counts].sort(([a],[b])=>a.localeCompare(b,'ru',{numeric:true})).map(([value,count])=>({value,count}));
 }
-export function setFilter(filters,key,value){
+export function setFilter(filters,key,value,products=null,query=''){
   const next={...filters,[key]:value};
-  if(key==='brand'||key==='category')for(const child of ['model','color','size'])next[child]='all';
+  if(key==='brand'||key==='category'){
+    const children=['model','color','size'];
+    const selected=Object.fromEntries(children.map(child=>[child,next[child]]));
+    for(const child of children)next[child]='all';
+    // Brand/category changes preserve compatible choices. Clear only a child
+    // that has no matching product under the new parent and prior choices.
+    if(Array.isArray(products))for(const child of children){
+      if(selected[child]==='all')continue;
+      const candidate={...next,[child]:selected[child]};
+      if(filterProducts(products,candidate,query,'price').length)next[child]=selected[child];
+    }
+  }
   return next;
 }
 export const activeCount=f=>Object.entries(f).filter(([k,v])=>k==='minPrice'||k==='maxPrice'?v!=='':v!=='all').length;
