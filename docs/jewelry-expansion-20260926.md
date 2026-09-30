@@ -46,6 +46,32 @@ baseline/candidato a cache fredda/calda: la velocità non è dichiarata PASS.
 
 ## Stato dati e blocchi di attivazione
 
+### Confronto di reattività locale del candidato, 30 settembre
+
+Il preview UAT ora espone tre marcatori osservabili: home visibile, dettaglio
+visibile e immagine principale caricata (oppure fallita). La strumentazione è
+solo in `scripts/preview.mjs`, fuori dai sei asset pubblici. Il server legge la
+versione dell'entrypoint dal build selezionato: lo stesso fixture da 117 DTO
+(67 ON, 50 LV) è stato provato su `origin/main`
+`6af666fad98cfa3786a4ee7ed771137a02884822` e sul candidato
+`193ea0d36fc738ea416ff48f72dcdcb44bfe1302`. Cinque reload per percorso
+e viewport, nel browser locale; tempi mediani da `performance.now()`, in ms:
+
+| Percorso | 430×932 baseline → candidato | 1440×900 baseline → candidato |
+| --- | ---: | ---: |
+| Home visibile | 40,5 → 42,5 | 55,8 → 55,9 |
+| Dettaglio ON 343 visibile | 32,0 → 30,9 | 34,2 → 39,2 |
+| Foto principale ON 343 caricata | 114,3 → 139,1 | 138,2 → 126,3 |
+
+I sei asset statici sommano 27.985 → 29.946 byte gzip (+1.961). La mediana
+foto su 430×932 peggiora, mentre su 1440×900 migliora, con la stessa immagine
+pubblica e forte variabilità del primo campione: il risultato è **inconcludente**,
+non un gate prestazionale PASS. Il preview usa API/Telegram simulati,
+`Cache-Control: no-store` e non separa in modo affidabile cold/warm; non misura
+una sessione firmata, la reattività CRM/Supabase reale né un iPhone fisico.
+Prima del rilascio occorre ripetere sullo SHA finale con dati e media staging,
+baseline comparabile e UAT browser autenticata secondo il gate vigente.
+
 ### UAT multibrand del candidato 30 settembre
 
 Sul candidato Mini App della PR #17, il preview locale ha caricato 102 DTO di

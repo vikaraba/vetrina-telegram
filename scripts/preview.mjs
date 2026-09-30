@@ -5,6 +5,9 @@ import {createHash} from 'node:crypto';
 import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 const root=process.env.MINIAPP_UAT_BUILD?pathToFileURL(resolve(process.env.MINIAPP_UAT_BUILD)+'/'):new URL('../',import.meta.url);
+const entryPattern=/src="[.]\/app[.]js[?]v=([a-zA-Z0-9-]+)"/;
+const entryVersion=(await readFile(new URL('index.html',root),'utf8')).match(entryPattern)?.[1];
+if(!entryVersion)throw Error('UAT entrypoint no longer matches the app');
 const port=Number(process.env.MINIAPP_UAT_PORT||43135);
 if(!Number.isInteger(port)||port<1024||port>65535)throw Error('Invalid local UAT port');
 const fixture=process.env.MINIAPP_UAT_FIXTURE;
@@ -38,6 +41,29 @@ const params=new URLSearchParams(location.search);
 let data=await originalFetch('/__qa/data').then(r=>r.json());
 if(params.get('catalog')==='empty')data=[];
 let catalogAttempts=0,telegramBack=()=>{};
+window.__miniappUatPerformance={homeVisibleMs:null,productVisibleMs:null,productHeroLoadedMs:null,productHeroFailed:false};
+const timing=document.createElement('output');timing.id='qa-performance';timing.style.cssText='display:block;font:11px monospace;padding:8px';document.body.append(timing);
+const visibleObserver=new MutationObserver(()=>{
+  if(window.__miniappUatPerformance.homeVisibleMs===null&&document.querySelector('#home-title'))
+    window.__miniappUatPerformance.homeVisibleMs=Math.round(performance.now()*10)/10;
+  if(window.__miniappUatPerformance.productVisibleMs===null&&document.querySelector('#hero-image'))
+    window.__miniappUatPerformance.productVisibleMs=Math.round(performance.now()*10)/10;
+  const hero=document.querySelector('#hero-image');
+  if(hero&&!hero.dataset.qaImageTimed){
+    hero.dataset.qaImageTimed='1';
+    const imageFinished=()=>{
+      if(hero.naturalWidth>0)window.__miniappUatPerformance.productHeroLoadedMs=Math.round(performance.now()*10)/10;
+      else window.__miniappUatPerformance.productHeroFailed=true;
+      timing.dataset.heroReady=hero.naturalWidth>0?'true':'failed';
+      timing.textContent=JSON.stringify(window.__miniappUatPerformance);
+    };
+    if(hero.complete)imageFinished();
+    else {hero.addEventListener('load',imageFinished,{once:true});hero.addEventListener('error',imageFinished,{once:true});}
+  }
+  const next=JSON.stringify(window.__miniappUatPerformance);
+  if(timing.textContent!==next)timing.textContent=next;
+});
+visibleObserver.observe(document.body,{childList:true,subtree:true});
 const log=document.createElement('pre');log.id='qa-log';log.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font:11px monospace;padding:12px';document.body.append(log);
 const record=value=>{log.textContent+=JSON.stringify(value)+String.fromCharCode(10);};
 const back=document.createElement('button');back.id='qa-back';back.textContent='Telegram Back · UAT';back.hidden=true;back.style.cssText='min-height:44px';back.onclick=()=>telegramBack();document.body.append(back);
@@ -68,7 +94,7 @@ window.fetch=async(url,options={})=>{
  if(action==='interaction')return answer({ok:true});
  throw Error('Unmocked UAT request');
 };
-await import('/vetrina-telegram/app.js?v=20260930-compatible-filters');
+await import('/vetrina-telegram/app.js?v=${entryVersion}');
 `;
 const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs']);
 http.createServer(async(req,res)=>{
@@ -95,7 +121,9 @@ http.createServer(async(req,res)=>{
    const name=path.replace(/^\/vetrina-telegram\//,'')||'index.html';
    if(!assets.has(name)){res.writeHead(404);res.end();return;}
    let content=await readFile(new URL(name,root),'utf8');
-   if(name==='index.html')content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace('src="./app.js?v=20260930-compatible-filters"','src="/__qa/setup.js"');
+   if(name==='index.html'){
+     content=content.replace('<script src="https://telegram.org/js/telegram-web-app.js"></script>','').replace(entryPattern,'src="/__qa/setup.js"');
+   }
    // Only QA fixture paths are served from local, hash-verified archives.
    // Existing public CRM media keep their real URL in mixed-brand UAT.
    if(name==='app.js'&&mediaRoots.length){

@@ -21,8 +21,9 @@ test('release entry, order and catalog modules share a cache version, preview re
   assert.ok(app.includes("from './catalog-core.mjs?v="+version+"'"));
   assert.ok(html.includes('href="./style.css?v='+version+'"'));
   const preview=await read('scripts/preview.mjs');
-  assert.ok(preview.includes("await import('/vetrina-telegram/app.js?v="+version+"')"));
-  assert.ok(preview.includes('src="./app.js?v='+version+'"'));
+  assert.match(preview,/entryVersion=\(await readFile\(new URL\('index\.html',root\),'utf8'\)\)\.match\(entryPattern\)/);
+  assert.ok(preview.includes("await import('/vetrina-telegram/app.js?v=${entryVersion}')"));
+  assert.match(preview,/content=content\.replace\([^\n]+\.replace\(entryPattern,'src="\/__qa\/setup\.js"'\)/);
 });
 test('top navigation, minimal copy, proportional product grid and roller stay intact',()=>{
   assert.match(app,/<nav class="detail-nav"/);assert.equal((app.match(/id="explore"/g)||[]).length,1);
