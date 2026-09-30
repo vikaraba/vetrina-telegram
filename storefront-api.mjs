@@ -33,6 +33,14 @@ export function normalizeProduct(raw){
     priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,
     telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
 }
+export function isCustomerVisibleProduct(raw){
+  // These brands have no on-request exception: a missing or non-RUB customer
+  // price must not become an orderable card if an older API leaks the row.
+  const brand=String(raw?.brand||'').trim().toLowerCase();
+  if(brand!=='cartier'&&brand!=='chopard')return true;
+  return raw.priceMode!=='on_request'&&raw.priceCurrency==='RUB'&&
+    Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;
+}
 export function customerPriceLabel(product){
   if(product.priceMode==='on_request'&&product.brand==='Messika'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
   return product.priceCurrency==='RUB'&&Number.isFinite(product.priceAmount)&&product.priceAmount>0
@@ -80,9 +88,9 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
         if(offset>10000)throw new StorefrontError(0);
       }
       if(items.size!==total)throw new StorefrontError(0);
-      return [...items.values()];
+      return [...items.values()].filter(isCustomerVisibleProduct);
     },
-    async product(id){return normalizeProduct(await api('product',{id}));},
+    async product(id){const raw=await api('product',{id});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createStorefrontClient,requestedProductId,normalizeProduct,customerPriceLabel,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
+import {createStorefrontClient,requestedProductId,normalizeProduct,isCustomerVisibleProduct,customerPriceLabel,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
 import {blankFilters,filterProducts,facets,setFilter,priceError} from './catalog-core.mjs';
 import {createLatestCheck,sizeValues,indexAtScroll} from './size-picker.mjs';
 const tg={initData:'synthetic-test-signature',initDataUnsafe:{start_param:'product_7'},platform:'test'};
@@ -38,6 +38,27 @@ test('empty catalog is valid; incomplete or duplicate pagination fails explicitl
   assert.deepEqual(await make({items:[],total:0}).catalog(),[]);
   await assert.rejects(make({items:[],total:1}).catalog());
   await assert.rejects(make({items:[item(1),item(1)],total:2}).catalog());
+});
+test('Cartier and Chopard require a positive RUB customer price in catalog and direct links',async()=>{
+  const rows=[
+    {...item(1),brand:'Cartier',priceAmount:null,priceCurrency:null},
+    {...item(2),brand:'CHOPARD',priceAmount:1200,priceCurrency:'EUR'},
+    {...item(3),brand:'Cartier',priceAmount:0,priceCurrency:'RUB'},
+    {...item(4),brand:'Chopard',priceMode:'on_request',priceAmount:null,priceCurrency:null},
+    {...item(5),brand:'Cartier',priceAmount:150000,priceCurrency:'RUB'},
+    {...item(6),brand:'CHOPARD',priceAmount:990000,priceCurrency:'RUB'},
+    {...item(7),brand:'Messika',priceMode:'on_request',priceAmount:null,priceCurrency:null}
+  ];
+  const client=createStorefrontClient({tg,fetchImpl:async url=>{
+    if(url.searchParams.get('action')==='product')return ok(rows.find(p=>p.id===Number(url.searchParams.get('id'))));
+    const offset=Number(url.searchParams.get('offset'));
+    return ok({items:rows.slice(offset,offset+3),total:rows.length});
+  }});
+  assert.deepEqual((await client.catalog()).map(p=>p.id),[5,6,7]);
+  for(const id of [1,2,3,4])await assert.rejects(client.product(id),error=>error.status===404);
+  assert.equal((await client.product(5)).priceAmount,150000);
+  assert.equal(customerPriceLabel(await client.product(7)),'Цена по запросу');
+  assert.equal(isCustomerVisibleProduct({...item(8),brand:' cartier ',priceAmount:'Infinity'}),false);
 });
 test('API errors are customer Russian, never SQL/backend details',async()=>{
   const c=createStorefrontClient({tg,fetchImpl:async()=>({ok:false,status:500,json:async()=>({error:'secret SQL'})})});
