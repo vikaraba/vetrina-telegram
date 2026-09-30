@@ -139,7 +139,6 @@ body:has(dialog[open]) .mobile-dock{visibility:hidden}
 .home-heading{padding:16px 0 30px;max-width:650px}
 .home-heading h1{font:500 clamp(30px,4vw,48px)/1.12 Georgia,serif;letter-spacing:-.035em}
 #home-title:focus{outline:none}
-.home-heading>p:last-child{color:var(--muted);margin-top:14px;font-size:16px}
 .brand-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
 .brand-grid:has(>.brand-card:last-child:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr))}
 .brand-card{display:flex;flex-direction:column;min-width:0;text-align:left;padding:0;border:1px solid var(--line);background:var(--surface);border-radius:18px;overflow:hidden;transition:border-color .2s}
@@ -159,8 +158,8 @@ body:has(dialog[open]) .mobile-dock{visibility:hidden}
 .catalog-nav h1{font:500 22px/1.2 Georgia,serif;overflow-wrap:anywhere}
 @media(max-width:700px){
  .brand-home{padding:max(20px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
- .home-heading{padding:10px 0 24px}.home-heading .eyebrow{font-size:10px;letter-spacing:1.5px}
- .home-heading h1{font-size:34px}.home-heading>p:last-child{font-size:14px;max-width:290px;line-height:1.6}
+ .home-heading{padding:10px 0 24px}
+ .home-heading h1{font-size:34px}
  .brand-grid,.brand-grid:has(>.brand-card:last-child:nth-child(2)){grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
  .brand-card{border-radius:14px}.brand-card-image{aspect-ratio:1}
  .brand-card-copy{padding:14px 12px;gap:7px}.brand-card-copy>strong{font-size:23px}

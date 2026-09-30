@@ -33,6 +33,7 @@ test('top navigation, minimal copy, proportional product grid and roller stay in
   assert.doesNotMatch(css,/\.card-image\{[^}]*100svh/);
   assert.match(html,/id="size-wheel"[^>]+role="listbox"/);assert.match(css,/scroll-snap-type:y mandatory/);
   assert.doesNotMatch(app+html,/Для вас, под заказ|Наличие и итоговую стоимость подтверждает Анастасия перед покупкой|Ваш персональный каталог|ПЕРСОНАЛЬНЫЙ ШОПИНГ/);
+  assert.doesNotMatch(app,/БАЙЕР АНАСТАСИЯ · ИТАЛИЯ|Выберите бренд и найдите свою модель/);
 });
 test('safe-area, dark palette, reduced motion and readable input rules',()=>{assert.match(css,/safe-area-inset-bottom/);assert.match(css,/min-height:44px/);assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/font-size:16px/);assert.match(app,/themeChanged/);});
 test('programmatically focused home heading does not draw a non-interactive ring',()=>{assert.match(app,/id="home-title" tabindex="-1"/);assert.match(css,/#home-title:focus\{outline:none\}/);});
