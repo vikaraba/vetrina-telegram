@@ -32,6 +32,11 @@ export function telegramPostUrl(value){
   if(typeof value!=='string')return null;
   return /^https:\/\/t\.me\/(?:c\/[1-9][0-9]*|[A-Za-z][A-Za-z0-9_]{4,31})\/(?:[1-9][0-9]*\/)?[1-9][0-9]*$/.test(value)&&!/[\s]/.test(value)?value:null;
 }
+export function catalogProductUrl(productId){
+  // This is the named Mini App's existing start parameter contract. Never
+  // substitute a supplier URL or a generic catalog homepage for a product.
+  return Number.isSafeInteger(productId)&&productId>0?`${MINI_APP_URL}?startapp=product_${productId}`:null;
+}
 export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=12000,sleep=ms=>new Promise(r=>setTimeout(r,ms)),pollAttempts=20}={}){
   const pageSessionId=randomUuid();let explored=false;
   const pending=new Map();
@@ -103,11 +108,13 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
 }
 export function contactUrl(product,size){
   const post=telegramPostUrl(product.telegramPostUrl);
+  const card=catalogProductUrl(product.id);
   const message='Анастасия, здравствуйте!\n\nМеня интересует '+product.brand+' '+product.name+
     (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+product.color:'')+'.'+
     (size?'\nРазмер '+(product.category==='shoes'?'EU ':'')+size+'.':'')+
     '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!'+
-    (post?'\n\nПубликация в каталоге:\n'+post:'');
+    (post?'\n\nПубликация в каталоге:\n'+post:'')+
+    (card?'\n\nКарточка товара:\n'+card:'');
   return 'https://t.me/buyer_rome?text='+encodeURIComponent(message);
 }
 export function openContact(client,tg,product,size,navigate=url=>{globalThis.location.href=url;}){
