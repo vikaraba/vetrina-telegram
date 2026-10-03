@@ -24,14 +24,17 @@
       const query = new URLSearchParams(location.search);
       const channel = query.get("c") || "";
       const post = query.get("p") || "";
+      const publication = query.get("publication") || "";
       const signature = query.get("s") || "";
-      if (!/^\d{5,20}$/.test(channel) || !/^[1-9]\d{0,15}$/.test(post) || !/^[a-f0-9]{32}$/.test(signature)) {
+      const exact = /^[1-9]\d{0,15}$/.test(publication) && !channel && !post;
+      const legacy = !publication && /^\d{5,20}$/.test(channel) && /^[1-9]\d{0,15}$/.test(post);
+      if ((!exact && !legacy) || !/^[a-f0-9]{32}$/.test(signature)) {
         document.getElementById("status").textContent = "Ссылка на товар недействительна. Напишите Анастасии напрямую.";
         return;
       }
       const target = new URL("https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-product-contact");
-      target.searchParams.set("c", channel);
-      target.searchParams.set("p", post);
+      if (exact) target.searchParams.set("publication", publication);
+      else { target.searchParams.set("c", channel); target.searchParams.set("p", post); }
       target.searchParams.set("s", signature);
       document.getElementById("open").href = target.href;
       location.replace(target.href);
