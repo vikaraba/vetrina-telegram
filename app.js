@@ -1,9 +1,9 @@
-import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260927-jewelry';
+import {createStorefrontClient,requestedProductId,requestedPublicationId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20261003-publication';
 const tg=window.Telegram?.WebApp;
 tg?.ready();tg?.expand();
 const client=createStorefrontClient({tg});
 import {sizeValues,createSizeWheel,createLatestCheck} from './size-picker.mjs';
-import {blankFilters,modelName,productTitle,jewelryMaterial,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice,brandCollections} from './catalog-core.mjs?v=20260927-jewelry';
+import {blankFilters,modelName,productTitle,jewelryMaterial,categoryOf,categoryLabel,genderLabel,colorLabel,filterProducts,facets,setFilter,activeCount,priceError,validPrice,brandCollections} from './catalog-core.mjs?v=20261003-publication';
 const $=s=>document.querySelector(s);
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const paths={sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>',moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>',filter:'<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="17" r="2" fill="currentColor"/>',arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',back:'<path d="M19 12H5m5-5-5 5 5 5"/>',photo:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 17 5-5 4 3 3-4 5 6"/><circle cx="8" cy="9" r="1"/>',zoom:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5M7 10h6m-3-3v6"/>',bag:'<path d="M5 7h14l1 14H4L5 7Zm3 0V5a4 4 0 0 1 8 0v2"/>',chat:'<path d="M20 11.5a8 8 0 0 1-8 8H5l-3 2 1.5-5A8 8 0 1 1 20 11.5Z"/><path d="M7 10h9M7 14h6"/>',check:'<path d="m5 12 4 4L19 6"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/>',left:'<path d="m15 6-6 6 6 6"/>',right:'<path d="m9 6 6 6-6 6"/>'};
@@ -132,15 +132,15 @@ function updateFilterCount(){
 }
 $('#filters-reset').onclick=()=>{state.draft=blankFilters();renderFilterFields();};
 $('#filters-apply').onclick=()=>{if(priceError(state.draft))return;state.filters={...state.draft};state.limit=12;event('catalog_filter',{filters:state.filters,resultCount:results().length});$('#filters-dialog').close();showCatalog({push:false});};
-async function showProduct(id,{push=true}={}){
+async function showProduct(id,{push=true,publicationId=null}={}){
   saveCatalogHistory();state.page='product';
   closeOverlays();sizeCheck.cancel();const navigation=++state.navigation;
   state.product=null;document.body.classList.remove('has-product');
   $('#app').innerHTML='<div class="loading-state" role="status"><span class="spinner"></span>Загружаем модель…</div>';
-  let p;try{p=await client.product(id);}catch(error){if(navigation===state.navigation)errorScreen(error,()=>showProduct(id,{push}));return;}
+  let p;try{p=publicationId?await client.productByPublication(publicationId):await client.product(id);}catch(error){if(navigation===state.navigation)errorScreen(error,()=>showProduct(id,{push,publicationId}));return;}
   if(navigation!==state.navigation)return;
   state.product=p;state.imageIndex=0;state.size=null;state.check='idle';document.body.classList.add('has-product');tg?.BackButton?.show?.();
-  if(push)history.pushState({product:id,explored:state.explored},'',navigationUrl(id));
+  if(push)history.pushState({product:p.id,publicationId:publicationId||null,explored:state.explored},'',navigationUrl(p.id));
   event('product_opened');
   const photos=images(p);const on=categoryOf(p)==='shoes';const hasSizes=Boolean(p.sizes?.length);const dimensions=p.description?.match(/\d+(?:[.,]\d+)?\s*x\s*\d+(?:[.,]\d+)?\s*x\s*\d+(?:[.,]\d+)?\s*cm/i)?.[0]?.replace(/cm/i,'см').replaceAll('x','×');
   $('#app').innerHTML=`<section class="detail-page"><nav class="detail-nav" aria-label="Навигация по товару"><button class="back-button" id="back-catalog" aria-label="Вернуться в каталог">${icon('back')}<span>В каталог</span></button><button class="browse-button" id="explore" aria-label="Посмотреть другие модели ${escapeHtml(p.brand)}"><span>Другие модели</span>${icon('arrow')}</button></nav><div class="product-layout"><div class="gallery"><div class="gallery-main"><button class="gallery-open" id="gallery-open" aria-label="Увеличить фото 1"><img id="hero-image" src="${imageUrl(photos[0])}" alt="${escapeHtml(title(p))}, фото 1" width="960" height="900" fetchpriority="high" decoding="async"></button><span class="gallery-counter" id="gallery-counter">1 / ${photos.length}</span>${photos.length>1?`<button id="gallery-prev" class="icon-button gallery-arrow prev" aria-label="Предыдущее фото">${icon('left')}</button><button id="gallery-next" class="icon-button gallery-arrow next" aria-label="Следующее фото">${icon('right')}</button>`:''}<button class="gallery-zoom" id="gallery-zoom">${icon('zoom')}Рассмотреть ближе</button></div><div class="thumbnail-row" aria-label="Фотографии модели">${photos.map((img,i)=>`<button class="thumbnail" data-image="${i}" aria-label="Показать фото ${i+1}" aria-pressed="${i===0}"><img src="${imageUrl(img)}" alt="" width="74" height="74" loading="lazy" decoding="async"></button>`).join('')}</div><p class="gallery-help">${icon('photo')}Все фотографии относятся к выбранной модели.</p></div><div class="product-info"><p class="detail-brand">${escapeHtml(p.brand)}</p><h1>${escapeHtml(title(p))}</h1><p class="detail-subtitle">${escapeHtml(on?gender(p)+' · '+color(p):color(p))}</p><p class="detail-price">${money(p)}</p><p class="price-note">Доставка рассчитывается отдельно</p>${hasSizes?`<button class="size-trigger" id="size-open" aria-haspopup="dialog" aria-controls="size-dialog"><span id="selected-size">Выбрать размер</span><span class="size-trigger-end">${on?'EU':''} ${icon('right')}</span></button>`:''}<div id="availability" aria-live="polite"></div><div class="detail-actions"><button class="primary" id="detail-contact">${icon('chat')}Заказать</button></div><details class="details-disclosure"><summary>О модели</summary><dl><div><dt>Артикул</dt><dd>${escapeHtml(p.reference)}</dd></div><div><dt>Цвет</dt><dd>${escapeHtml(color(p))}</dd></div>${on?`<div><dt>Для кого</dt><dd>${gender(p)}</dd></div>`:`<div><dt>Материал</dt><dd>${escapeHtml(material(p))}</dd></div>${dimensions?`<div><dt>Размеры</dt><dd>${escapeHtml(dimensions)}</dd></div>`:''}`}</dl></details><details class="details-disclosure"><summary>Как заказать и получить</summary><p>Напишите Анастасии. Она уточнит наличие, подтвердит стоимость и согласует доставку. Товар приобретается после подтверждения вашего запроса.</p></details></div></div></section><div class="mobile-dock"><span class="dock-price">${money(p)}<span class="dock-caption">Доставка отдельно</span></span><button class="primary" id="dock-contact">${icon('chat')}Заказать</button></div>`;
@@ -231,11 +231,11 @@ $('#zoom-dialog').addEventListener('close',()=>{pointers.clear();pinchBase=null;
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());
 window.addEventListener('popstate',e=>{
   if(e.state?.explored){client.explore();state.explored=true;}
-  if(e.state?.product){showProduct(e.state.product,{push:false});return;}
+  if(e.state?.product||e.state?.publicationId){showProduct(e.state.product||null,{push:false,publicationId:e.state.publicationId||null});return;}
   if(e.state?.catalog){
     state.filters={...blankFilters(),...e.state.filters};state.query=e.state.query||'';state.sort=e.state.sort||'curated';state.limit=e.state.limit||12;state.scroll=e.state.scroll||0;
     showCatalog({restore:true,push:false});
   }else showHome({push:false});
 });
-async function boot(){if(!tg?.initData){errorScreen(new StorefrontError(401),boot);return;}const id=requestedProductId(tg,location.search);if(id){state.source='telegram_product_post';history.replaceState({product:id,explored:false},'',location.href);await showProduct(id,{push:false});}else {history.replaceState({home:true,explored:true},'',location.href);await showHome({push:false});}}
+async function boot(){if(!tg?.initData){errorScreen(new StorefrontError(401),boot);return;}const publicationId=requestedPublicationId(tg,location.search);if(publicationId){state.source='telegram_publication_post';history.replaceState({publicationId,explored:false},'',location.href);await showProduct(null,{push:false,publicationId});return;}const id=requestedProductId(tg,location.search);if(id){state.source='telegram_product_post';history.replaceState({product:id,explored:false},'',location.href);await showProduct(id,{push:false});}else {history.replaceState({home:true,explored:true},'',location.href);await showHome({push:false});}}
 boot();

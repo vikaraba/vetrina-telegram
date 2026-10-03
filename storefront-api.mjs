@@ -12,6 +12,11 @@ export function requestedProductId(tg,search=''){
   const match=/^product_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
   return Number.isSafeInteger(id)?id:null;
 }
+export function requestedPublicationId(tg,search=''){
+  const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(search).get('tgWebAppStartParam')||'');
+  const match=/^publication_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
+  return Number.isSafeInteger(id)?id:null;
+}
 export function clientContext(tg,pageSessionId){
   const s=globalThis.screen||{},nav=globalThis.navigator||{};
   return {schema_version:'telegram-webapp-client-v1',captured_at:new Date().toISOString(),page_session_id:pageSessionId,trust:'client_reported',
@@ -25,7 +30,8 @@ export class StorefrontError extends Error{
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+  const telegramPublicationId=Number(raw.telegramPublicationId);
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl),telegramPublicationId:Number.isSafeInteger(telegramPublicationId)&&telegramPublicationId>0?telegramPublicationId:null};
 }
 export function telegramPostUrl(value){
   // Accept message permalinks only, never a source website, profile, invite or launch URL.
@@ -77,6 +83,7 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
       return [...items.values()];
     },
     async product(id){return normalizeProduct(await api('product',{id}));},
+    async productByPublication(publicationId){return normalizeProduct(await api('product',{publication_id:publicationId}));},
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },
