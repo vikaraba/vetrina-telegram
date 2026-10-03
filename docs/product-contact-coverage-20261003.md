@@ -13,10 +13,13 @@ prima di essere attivati insieme.
 | Scheda della Mini App, senza post | ID prodotto positivo e sicuro | Scheda Mini App `startapp=product_ID` | La scheda richiede una sessione Telegram valida e che il prodotto resti visibile. |
 | Nuovi post fornitore Denis | ID pubblicazione nel sender CRM | Link firmato al post esatto dopo attivazione separata di #710/#18 | Non attivo finché la credenziale HMAC non è configurata; i vecchi post non vengono modificati. |
 | Post ON | Referenza nella CTA `buyer_rome?text=ON…` | Referenza, non identità del post cliccato | Serve adattare il sender con l'ID pubblicazione dopo l'invio. |
-| Altri publisher CRM (Gucci, Cartier, LV, VCA, manuali) | Dipende dal sender e dalla destinazione | Non certificato da questo incremento | Censire CTA e post pubblicato per ogni fonte prima di dichiarare copertura totale. |
+| Nuovi post Gucci, Cartier, Louis Vuitton, Van Cleef e ON dai sender CRM | ID pubblicazione nel sender | Template comune con link firmato al post esatto, se configurato e se entra nella didascalia | Richiede migrazione CRM v3, deploy dei sender e UAT; il vecchio post non viene modificato. |
+| Post manuali già importati | ID pubblicazione e URL Telegram nel CRM | Resolver firmato disponibile per un link nuovo verso la pubblicazione | I vecchi post non vengono modificati in massa; non hanno automaticamente una nuova CTA. |
 
-La prossima fase deve far emettere `publication_ID` ai sender idonei e censire
-le CTA di tutti i canali. Quando il post non esiste, usare solo la scheda Mini
+Il template comune CRM prepara il link firmato per i cinque sender di marca.
+La prossima fase deve validare i post futuri realmente emessi e individuare le
+CTA dei flussi legacy/manuali che non usano quei sender. Quando il post non
+esiste, usare solo la scheda Mini
 App con ID prodotto validato. Non ricavare link dal sito del fornitore, da
 payload privati o da URL arbitrari. Conservare la taglia nel testo, non costi,
 margini o note CRM.
