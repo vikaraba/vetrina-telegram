@@ -51,4 +51,4 @@ test('ON verification is centered beneath price while ordering stays in the mobi
   assert.match(app,/class="mobile-dock"[^`]*id="dock-contact"/);
   assert.match(app,/const label=state\.check==='pending'\?'Проверяем…':'Заказать'/);
 });
-test('catalog fetch does not auto-open product details or fabricate all-size facets',()=>{assert.doesNotMatch(app,/select\('size','Размер'/);assert.match(app,/p=await client.product\(id\)/);assert.match(app,/state.products=products/);});
+test('catalog fetch does not auto-open product details or fabricate all-size facets',()=>{assert.doesNotMatch(app,/select\('size','Размер'/);assert.match(app,/publicationId\?await client.productByPublication\(publicationId\):await client.product\(id\)/);assert.match(app,/state.products=products/);});

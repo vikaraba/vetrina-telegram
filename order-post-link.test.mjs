@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {contactUrl,normalizeProduct,openContact,createStorefrontClient,telegramPostUrl,catalogProductUrl} from './storefront-api.mjs';
+import {contactUrl,normalizeProduct,openContact,createStorefrontClient,telegramPostUrl,catalogProductUrl,requestedPublicationId} from './storefront-api.mjs';
 
 const original='https://t.me/c/3920029691/8354/9600';
 const product={id:343,brand:'On',name:'THE ROGER',category:'shoes',reference:'TEST-343',color:'White',telegramPostUrl:original};
@@ -52,4 +52,28 @@ test('customer DTO still excludes source URLs, prices and arbitrary private publ
   const p=normalizeProduct({...product,sourceUrl:'https://supplier.example/private',priceEur:80,channel_payload:{secret:'private'}});
   assert.equal(p.telegramPostUrl,original);
   for(const key of ['sourceUrl','priceEur','channel_payload'])assert.ok(!(key in p));
+});
+test('signed publication launch requests exact clicked post, including second post',async()=>{
+  assert.equal(requestedPublicationId({initDataUnsafe:{start_param:'publication_1718'}},'?tgWebAppStartParam=publication_112'),1718);
+  for(const invalid of ['publication_0','publication_1x','publication_9007199254740993','product_112'])
+    assert.equal(requestedPublicationId(null,'?tgWebAppStartParam='+invalid),null);
+  const second='https://t.me/c/3920029691/8354/10841';
+  const calls=[];
+  const client=createStorefrontClient({tg:{initData:'signed'},fetchImpl:async url=>{
+    calls.push(url);
+    return {ok:true,json:async()=>({...product,telegramPostUrl:second,telegramPublicationId:1718})};
+  }});
+  const selected=await client.productByPublication(1718);
+  assert.equal(calls[0].searchParams.get('publication_id'),'1718');
+  assert.equal(calls[0].searchParams.get('id'),null);
+  assert.equal(selected.telegramPublicationId,1718);
+  assert.ok(text(selected).includes(second));
+  assert.ok(!text(selected).includes(original));
+});
+test('ambiguous product-only and no-post records fall back to exact card without supplier cost',()=>{
+  for(const raw of [{...product,telegramPostUrl:null},{...product,telegramPostUrl:null,priceEur:80,sourceUrl:'https://supplier.example/private'}]){
+    const draft=text(normalizeProduct(raw));
+    assert.match(draft,/Карточка товара:\nhttps:\/\/t\.me\/aerofeevaBot\/katalog\?startapp=product_343/);
+    assert.doesNotMatch(draft,/Публикация в каталоге|supplier\.example|80/);
+  }
 });

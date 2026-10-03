@@ -13,6 +13,11 @@ export function requestedProductId(tg,search=''){
   const match=/^product_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
   return Number.isSafeInteger(id)?id:null;
 }
+export function requestedPublicationId(tg,search=''){
+  const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(search).get('tgWebAppStartParam')||'');
+  const match=/^publication_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
+  return Number.isSafeInteger(id)?id:null;
+}
 export function clientContext(tg,pageSessionId){
   const s=globalThis.screen||{},nav=globalThis.navigator||{};
   return {schema_version:'telegram-webapp-client-v1',captured_at:new Date().toISOString(),page_session_id:pageSessionId,trust:'client_reported',
@@ -28,10 +33,12 @@ export function normalizeProduct(raw){
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
   const onRequest=raw.priceMode==='on_request'&&brand==='Messika'&&priceAmount==null&&priceCurrency==null;
   const inconsistent=raw.priceMode==='on_request'&&!onRequest;
+  const telegramPublicationId=Number(raw.telegramPublicationId);
   return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
     priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
     priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,
-    telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+    telegramPostUrl:telegramPostUrl(raw.telegramPostUrl),
+    telegramPublicationId:Number.isSafeInteger(telegramPublicationId)&&telegramPublicationId>0?telegramPublicationId:null};
 }
 export function isCustomerVisibleProduct(raw){
   // These brands have no on-request exception: a missing or non-RUB customer
@@ -96,6 +103,7 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
       return [...items.values()].filter(isCustomerVisibleProduct);
     },
     async product(id){const raw=await api('product',{id});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
+    async productByPublication(publicationId){const raw=await api('product',{publication_id:publicationId});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },
