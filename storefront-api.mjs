@@ -12,6 +12,11 @@ export function requestedProductId(tg,search=''){
   const match=/^product_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
   return Number.isSafeInteger(id)?id:null;
 }
+export function requestedPublicationId(tg,search=''){
+  const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(search).get('tgWebAppStartParam')||'');
+  const match=/^publication_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
+  return Number.isSafeInteger(id)?id:null;
+}
 export function clientContext(tg,pageSessionId){
   const s=globalThis.screen||{},nav=globalThis.navigator||{};
   return {schema_version:'telegram-webapp-client-v1',captured_at:new Date().toISOString(),page_session_id:pageSessionId,trust:'client_reported',
@@ -25,12 +30,18 @@ export class StorefrontError extends Error{
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+  const telegramPublicationId=Number(raw.telegramPublicationId);
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl),telegramPublicationId:Number.isSafeInteger(telegramPublicationId)&&telegramPublicationId>0?telegramPublicationId:null};
 }
 export function telegramPostUrl(value){
   // Accept message permalinks only, never a source website, profile, invite or launch URL.
   if(typeof value!=='string')return null;
   return /^https:\/\/t\.me\/(?:c\/[1-9][0-9]*|[A-Za-z][A-Za-z0-9_]{4,31})\/(?:[1-9][0-9]*\/)?[1-9][0-9]*$/.test(value)&&!/[\s]/.test(value)?value:null;
+}
+export function catalogProductUrl(productId){
+  // This is the named Mini App's existing start parameter contract. Never
+  // substitute a supplier URL or a generic catalog homepage for a product.
+  return Number.isSafeInteger(productId)&&productId>0?`${MINI_APP_URL}?startapp=product_${productId}`:null;
 }
 export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=12000,sleep=ms=>new Promise(r=>setTimeout(r,ms)),pollAttempts=20}={}){
   const pageSessionId=randomUuid();let explored=false;
@@ -72,6 +83,7 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
       return [...items.values()];
     },
     async product(id){return normalizeProduct(await api('product',{id}));},
+    async productByPublication(publicationId){return normalizeProduct(await api('product',{publication_id:publicationId}));},
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },
@@ -103,11 +115,13 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
 }
 export function contactUrl(product,size){
   const post=telegramPostUrl(product.telegramPostUrl);
+  const card=catalogProductUrl(product.id);
   const message='Анастасия, здравствуйте!\n\nМеня интересует '+product.brand+' '+product.name+
     (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+product.color:'')+'.'+
     (size?'\nРазмер '+(product.category==='shoes'?'EU ':'')+size+'.':'')+
     '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!'+
-    (post?'\n\nПубликация в каталоге:\n'+post:'');
+    (post?'\n\nПубликация в каталоге:\n'+post:'')+
+    (card?'\n\nКарточка товара:\n'+card:'');
   return 'https://t.me/buyer_rome?text='+encodeURIComponent(message);
 }
 export function openContact(client,tg,product,size,navigate=url=>{globalThis.location.href=url;}){
