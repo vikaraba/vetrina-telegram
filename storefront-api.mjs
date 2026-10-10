@@ -54,8 +54,8 @@ export function customerImageUrl({bucket,path,url}={}){
 }
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
-  const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  const onRequest=raw.priceMode==='on_request'&&String(brand||'').trim().toLowerCase()==='messika'&&sourceId==='messika_it'&&priceAmount==null&&priceCurrency==null;
+  const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,sizeCount}=raw;
+  const onRequest=raw.priceMode==='on_request'&&priceAmount==null&&priceCurrency==null;
   const inconsistent=raw.priceMode==='on_request'&&!onRequest;
   const telegramPublicationId=Number(raw.telegramPublicationId);
   const publishedTime=typeof raw.publishedAt==='string'?Date.parse(raw.publishedAt):NaN;
@@ -74,7 +74,9 @@ export function normalizeProduct(raw){
   return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
     priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
     priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl:safeCover,
-    imageUrls:safeGallery.map(image=>image.url),images:safeGallery,sizes,description,sizeCount,
+    imageUrls:safeGallery.map(image=>image.url),images:safeGallery,sizes,
+    description:typeof raw.customerDescriptionRu==='string'&&/[А-Яа-яЁё]/.test(raw.customerDescriptionRu)
+      ?raw.customerDescriptionRu:null,sizeCount,
     // Optional authenticated list metadata: never derive dates from imports,
     // customer discounts from supplier prices, or stock from the size grid.
     publishedAt:Number.isFinite(publishedTime)&&publishedTime<=Date.now()?raw.publishedAt:null,
@@ -93,12 +95,11 @@ export function isCustomerVisibleProduct(raw){
   const sourceId=String(raw?.sourceId||'').trim();
   if(!Number.isSafeInteger(Number(raw?.id))||Number(raw.id)<=0||!brand||!sourceId||
     !customerImageUrl({bucket:raw?.imageBucket,path:raw?.imagePath,url:raw?.imageUrl}))return false;
-  if(raw.priceMode==='on_request')return brand==='messika'&&sourceId==='messika_it'&&
-    raw.priceAmount==null&&raw.priceCurrency==null;
+  if(raw.priceMode==='on_request')return raw.priceAmount==null&&raw.priceCurrency==null;
   return raw.priceCurrency==='RUB'&&Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;
 }
 export function customerPriceLabel(product){
-  if(product.priceMode==='on_request'&&String(product.brand||'').trim().toLowerCase()==='messika'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
+  if(product.priceMode==='on_request'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
   return product.priceCurrency==='RUB'&&Number.isFinite(product.priceAmount)&&product.priceAmount>0
     ?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(product.priceAmount)+' ₽':'Цена уточняется';
 }
@@ -203,6 +204,7 @@ export function contactUrl(product,size){
 }
 export function openContact(client,tg,product,size,navigate=url=>{globalThis.location.href=url;}){
   // Dispatch telemetry without awaiting it: a slow analytics API cannot block buying.
+  if(product.priceMode==='on_request')void client.track('price_inquiry_opened',product.id,{size:size||null});
   void client.track('contact_anastasia_opened',product.id,{size:size||null});
   const url=contactUrl(product,size);
   if(tg?.openTelegramLink)tg.openTelegramLink(url);else navigate(url);

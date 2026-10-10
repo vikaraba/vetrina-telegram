@@ -51,7 +51,7 @@ test('empty catalog is valid; incomplete or duplicate pagination fails explicitl
   await assert.rejects(make({items:[],total:1}).catalog());
   await assert.rejects(make({items:[item(1),item(1)],total:2}).catalog());
 });
-test('Cartier and Chopard require a positive RUB customer price in catalog and direct links',async()=>{
+test('Cartier and Chopard accept explicit on-request while invalid or EUR prices stay hidden',async()=>{
   const rows=[
     {...item(1),brand:'Cartier',priceAmount:null,priceCurrency:null},
     {...item(2),brand:'CHOPARD',priceAmount:1200,priceCurrency:'EUR'},
@@ -66,8 +66,9 @@ test('Cartier and Chopard require a positive RUB customer price in catalog and d
     const offset=Number(url.searchParams.get('offset'));
     return ok({items:rows.slice(offset,offset+3),total:rows.length});
   }});
-  assert.deepEqual((await client.catalog()).map(p=>p.id),[5,6,7]);
-  for(const id of [1,2,3,4])await assert.rejects(client.product(id),error=>error.status===404);
+  assert.deepEqual((await client.catalog()).map(p=>p.id),[4,5,6,7]);
+  for(const id of [1,2,3])await assert.rejects(client.product(id),error=>error.status===404);
+  assert.equal(customerPriceLabel(await client.product(4)),'Цена по запросу');
   assert.equal((await client.product(5)).priceAmount,150000);
   assert.equal(customerPriceLabel(await client.product(7)),'Цена по запросу');
   assert.equal(isCustomerVisibleProduct({...item(8),brand:' cartier ',priceAmount:'Infinity'}),false);
@@ -79,7 +80,7 @@ test('priced catalog and direct product fail closed on EUR, absent source or mis
     {...item(3),imageBucket:null,imagePath:null},
     {...item(4),imageBucket:'product-imports',imagePath:'telegram/4.jpg',imageUrl:null},
     {...item(5),priceAmount:null},
-    {...item(6),priceMode:'on_request',priceAmount:null,priceCurrency:null}
+    {...item(6),priceMode:'priced',priceAmount:null,priceCurrency:null}
   ];
   const valid=item(7);
   const client=createStorefrontClient({tg,fetchImpl:async url=>url.searchParams.get('action')==='product'
@@ -165,6 +166,14 @@ test('Messika on-request price is explicit and never inferred from null or EUR',
   assert.equal(customerPriceLabel(inconsistent),'Цена уточняется');
   assert.equal(inconsistent.priceAmount,null);
   assert.match(customerPriceLabel(normalizeProduct({...item(1),priceAmount:18000,priceCurrency:'RUB'})),/^18\s000 ₽$/u);
+});
+test('approved Russian copy is displayed, raw CRM description is never copied',()=>{
+  const product=normalizeProduct({...item(9),brand:'Cartier',priceMode:'on_request',
+    priceAmount:null,priceCurrency:null,description:'Supplier cost 800 EUR',
+    customerDescriptionRu:'Кольцо из жёлтого золота.'});
+  assert.equal(product.description,'Кольцо из жёлтого золота.');
+  assert.equal(customerPriceLabel(product),'Цена по запросу');
+  assert.equal(normalizeProduct({...item(10),description:'Wholesale 800 EUR'}).description,null);
 });
 test('UUID and client metadata preserve legacy schema',()=>{
   assert.match(randomUuid(),/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
