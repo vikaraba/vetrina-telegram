@@ -31,7 +31,7 @@ export class StorefrontError extends Error{
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  const onRequest=raw.priceMode==='on_request'&&brand==='Messika'&&priceAmount==null&&priceCurrency==null;
+  const onRequest=raw.priceMode==='on_request'&&String(brand||'').trim().toLowerCase()==='messika'&&sourceId==='messika_it'&&priceAmount==null&&priceCurrency==null;
   const inconsistent=raw.priceMode==='on_request'&&!onRequest;
   const telegramPublicationId=Number(raw.telegramPublicationId);
   const publishedTime=typeof raw.publishedAt==='string'?Date.parse(raw.publishedAt):NaN;
@@ -55,15 +55,28 @@ export function normalizeProduct(raw){
     telegramPublicationId:Number.isSafeInteger(telegramPublicationId)&&telegramPublicationId>0?telegramPublicationId:null};
 }
 export function isCustomerVisibleProduct(raw){
-  // These brands have no on-request exception: a missing or non-RUB customer
-  // price must not become an orderable card if an older API leaks the row.
+  // The server owns publication approval. This is a second fail-closed boundary
+  // for older/mismatched DTOs; a placeholder price is never an order action.
   const brand=String(raw?.brand||'').trim().toLowerCase();
-  if(brand!=='cartier'&&brand!=='chopard')return true;
-  return raw.priceMode!=='on_request'&&raw.priceCurrency==='RUB'&&
-    Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;
+  const sourceId=String(raw?.sourceId||'').trim();
+  const bucket=raw?.imageBucket,path=String(raw?.imagePath||'').trim();
+  const publicPhoto=bucket==='product-images'&&!!path;
+  let signedPrivatePhoto=false;
+  if(bucket==='product-imports'&&path&&typeof raw?.imageUrl==='string'){
+    try{
+      const url=new URL(raw.imageUrl);
+      signedPrivatePhoto=url.protocol==='https:'&&url.hostname===new URL(API_BASE).hostname&&
+        url.pathname.startsWith('/storage/v1/object/sign/product-imports/')&&url.searchParams.has('token');
+    }catch{/* Invalid or missing signed media URL stays hidden. */}
+  }
+  if(!Number.isSafeInteger(Number(raw?.id))||Number(raw.id)<=0||!brand||!sourceId||
+    (!publicPhoto&&!signedPrivatePhoto))return false;
+  if(raw.priceMode==='on_request')return brand==='messika'&&sourceId==='messika_it'&&
+    raw.priceAmount==null&&raw.priceCurrency==null;
+  return raw.priceCurrency==='RUB'&&Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;
 }
 export function customerPriceLabel(product){
-  if(product.priceMode==='on_request'&&product.brand==='Messika'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
+  if(product.priceMode==='on_request'&&String(product.brand||'').trim().toLowerCase()==='messika'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
   return product.priceCurrency==='RUB'&&Number.isFinite(product.priceAmount)&&product.priceAmount>0
     ?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(product.priceAmount)+' ₽':'Цена уточняется';
 }

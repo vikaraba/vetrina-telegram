@@ -5,7 +5,7 @@ import {blankFilters,filterProducts,facets,setFilter,priceError} from './catalog
 import {createLatestCheck,sizeValues,indexAtScroll} from './size-picker.mjs';
 const tg={initData:'synthetic-test-signature',initDataUnsafe:{start_param:'product_7'},platform:'test'};
 const ok=value=>({ok:true,status:200,json:async()=>value});
-const item=id=>({id,brand:id%2?'On':'Louis Vuitton',name:'Model '+id,reference:'TEST-'+id,category:id%2?'shoes':'bags',gender:'women',model:'Model '+id,color:'White',priceAmount:10000+id,priceCurrency:'RUB'});
+const item=id=>({id,brand:id%2?'On':'Louis Vuitton',name:'Model '+id,reference:'TEST-'+id,category:id%2?'shoes':'bags',gender:'women',model:'Model '+id,color:'White',sourceId:id%2?'on_running_it':'louis_vuitton_it',imageBucket:'product-images',imagePath:`synthetic/${id}.jpg`,priceAmount:10000+id,priceCurrency:'RUB'});
 test('strict deep link accepts signed launch first, not arbitrary product query',()=>{
   assert.equal(requestedProductId(tg,'?tgWebAppStartParam=product_8'),7);
   for(const v of ['product_0','product_-1','product_1abc','product_9007199254740993','other'])assert.equal(requestedProductId(null,'?tgWebAppStartParam='+v),null);
@@ -33,6 +33,18 @@ test('catalog pagination reaches beyond100 without product detail calls or dupli
   const list=await c.catalog();assert.equal(list.length,234);assert.equal(new Set(list.map(p=>p.id)).size,234);
   assert.deepEqual(calls.map(u=>u.searchParams.get('offset')),['0','100','200']);assert.ok(calls.every(u=>u.searchParams.get('action')==='catalog'));
 });
+test('999/1000/1001 catalog rows with identical display tuples keep exact identity and count',async()=>{
+  for(const count of [999,1000,1001]){
+    const rows=Array.from({length:count},(_,index)=>({...item(index+1),name:'Same model',model:'Same model',color:'Black'}));
+    const client=createStorefrontClient({tg,fetchImpl:async url=>{
+      const offset=Number(url.searchParams.get('offset'));
+      return ok({items:rows.slice(offset,offset+100),total:count});
+    }});
+    const actual=await client.catalog();
+    assert.equal(actual.length,count);
+    assert.deepEqual(actual.map(p=>p.id),rows.map(p=>p.id));
+  }
+});
 test('empty catalog is valid; incomplete or duplicate pagination fails explicitly',async()=>{
   const make=payload=>createStorefrontClient({tg,fetchImpl:async()=>ok(payload)});
   assert.deepEqual(await make({items:[],total:0}).catalog(),[]);
@@ -47,7 +59,7 @@ test('Cartier and Chopard require a positive RUB customer price in catalog and d
     {...item(4),brand:'Chopard',priceMode:'on_request',priceAmount:null,priceCurrency:null},
     {...item(5),brand:'Cartier',priceAmount:150000,priceCurrency:'RUB'},
     {...item(6),brand:'CHOPARD',priceAmount:990000,priceCurrency:'RUB'},
-    {...item(7),brand:'Messika',priceMode:'on_request',priceAmount:null,priceCurrency:null}
+    {...item(7),brand:'Messika',sourceId:'messika_it',priceMode:'on_request',priceAmount:null,priceCurrency:null}
   ];
   const client=createStorefrontClient({tg,fetchImpl:async url=>{
     if(url.searchParams.get('action')==='product')return ok(rows.find(p=>p.id===Number(url.searchParams.get('id'))));
@@ -59,6 +71,26 @@ test('Cartier and Chopard require a positive RUB customer price in catalog and d
   assert.equal((await client.product(5)).priceAmount,150000);
   assert.equal(customerPriceLabel(await client.product(7)),'Цена по запросу');
   assert.equal(isCustomerVisibleProduct({...item(8),brand:' cartier ',priceAmount:'Infinity'}),false);
+});
+test('priced catalog and direct product fail closed on EUR, absent source or missing media',async()=>{
+  const invalid=[
+    {...item(1),priceCurrency:'EUR'},
+    {...item(2),sourceId:null},
+    {...item(3),imageBucket:null,imagePath:null},
+    {...item(4),imageBucket:'product-imports',imagePath:'telegram/4.jpg',imageUrl:null},
+    {...item(5),priceAmount:null},
+    {...item(6),priceMode:'on_request',priceAmount:null,priceCurrency:null}
+  ];
+  const valid=item(7);
+  const client=createStorefrontClient({tg,fetchImpl:async url=>url.searchParams.get('action')==='product'
+    ?ok([...invalid,valid].find(p=>p.id===Number(url.searchParams.get('id'))))
+    :ok({items:[...invalid,valid],total:7})});
+  assert.deepEqual((await client.catalog()).map(p=>p.id),[7]);
+  for(const row of invalid)await assert.rejects(client.product(row.id),error=>error.status===404);
+  assert.equal((await client.product(7)).id,7);
+  const privatePhoto={...item(8),imageBucket:'product-imports',imagePath:'telegram/8.jpg',imageUrl:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/8.jpg?token=synthetic'};
+  assert.equal(isCustomerVisibleProduct(privatePhoto),true);
+  assert.equal(isCustomerVisibleProduct({...privatePhoto,imageUrl:privatePhoto.imageUrl.replace('dbgcpgteuwkxqjgvppfp','untrusted')}),false);
 });
 test('API errors are customer Russian, never SQL/backend details',async()=>{
   const c=createStorefrontClient({tg,fetchImpl:async()=>({ok:false,status:500,json:async()=>({error:'secret SQL'})})});
@@ -101,7 +133,7 @@ test('customer DTO drops source cost and arbitrary private fields',()=>{
   assert.equal(normalizeProduct({...item(1),priceAmount:null}).priceAmount,null);
 });
 test('Messika on-request price is explicit and never inferred from null or EUR',()=>{
-  const messika=normalizeProduct({...item(1),brand:'Messika',priceMode:'on_request',priceAmount:null,priceCurrency:null,priceEur:1200});
+  const messika=normalizeProduct({...item(1),brand:'Messika',sourceId:'messika_it',priceMode:'on_request',priceAmount:null,priceCurrency:null,priceEur:1200});
   assert.equal(messika.priceMode,'on_request');
   assert.equal(customerPriceLabel(messika),'Цена по запросу');
   assert.ok(!('priceEur' in messika));

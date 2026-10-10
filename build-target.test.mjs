@@ -19,6 +19,10 @@ test('staging and production builds use only their own storefront endpoint',asyn
   assert.doesNotMatch(production,/zwhdxuiuhtxugvhzopjo\.supabase\.co/);
   assert.match(staging,/zwhdxuiuhtxugvhzopjo\.supabase\.co\/functions\/v1\/telegram-storefront/);
   assert.doesNotMatch(staging,/dbgcpgteuwkxqjgvppfp\.supabase\.co/);
+  const stagingApp=await readFile(new URL('dist-staging/app.js',root),'utf8');
+  assert.match(stagingApp,/storageOrigin=new URL\(API_BASE\)\.origin/);
+  assert.doesNotMatch(stagingApp,/dbgcpgteuwkxqjgvppfp\.supabase\.co/,
+    'staging images must use the staging API origin, including signed private media');
   const source=await readFile(new URL('storefront-api.mjs',root),'utf8');
   assert.equal(production,source,'the production build must remain byte-for-byte unchanged');
 });
