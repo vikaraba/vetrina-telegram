@@ -70,6 +70,14 @@ test('signed publication launch requests exact clicked post, including second po
   assert.ok(text(selected).includes(second));
   assert.ok(!text(selected).includes(original));
 });
+test('publication launch refuses mismatched or missing post provenance',async()=>{
+  for(const raw of [{...product,telegramPostUrl:original,telegramPublicationId:1717},{...product,telegramPostUrl:null,telegramPublicationId:1718},{...product,telegramPostUrl:original}]){
+    const client=createStorefrontClient({tg:{initData:'signed'},fetchImpl:async()=>({ok:true,json:async()=>raw})});
+    await assert.rejects(client.productByPublication(1718),error=>error.status===409);
+  }
+  const client=createStorefrontClient({tg:{initData:'signed'},fetchImpl:async()=>{throw Error('unexpected request');}});
+  await assert.rejects(client.productByPublication(0),error=>error.status===404);
+});
 test('ambiguous product-only and no-post records fall back to exact card without supplier cost',()=>{
   for(const raw of [{...product,telegramPostUrl:null},{...product,telegramPostUrl:null,priceEur:80,sourceUrl:'https://supplier.example/private'}]){
     const draft=text(normalizeProduct(raw));

@@ -4,6 +4,7 @@ import {readFile,realpath} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {previewProduct} from './preview-publication.mjs';
 const root=process.env.MINIAPP_UAT_BUILD?pathToFileURL(resolve(process.env.MINIAPP_UAT_BUILD)+'/'):new URL('../',import.meta.url);
 const entryPattern=/src="[.]\/app[.]js[?]v=([a-zA-Z0-9-]+)"/;
 const entryVersion=(await readFile(new URL('index.html',root),'utf8')).match(entryPattern)?.[1];
@@ -20,7 +21,7 @@ const sources=await Promise.all(fixturePaths.map(async path=>JSON.parse(await re
 if(sources.some(source=>!Array.isArray(source)))throw Error('Every UAT fixture must be a product array');
 const raw=sources.flat();
 if(new Set(raw.map(product=>product.id)).size!==raw.length)throw Error('Duplicate product ID across UAT fixtures');
-const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
+const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl,telegramPublicationId,telegramPublications})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceMode,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl,telegramPublicationId,telegramPublications}));
 // Validate every local QA image before opening the preview, not just the ones
 // visible on the first page. Public CRM paths are intentionally left alone.
 const qaMedia=new Set(products.flatMap(product=>[product.imagePath,...(product.images||[]).map(image=>image?.path)]).filter(path=>typeof path==='string'&&path.startsWith('qa/')));
@@ -36,6 +37,7 @@ for(const path of qaMedia){
   if(createHash('sha256').update(bytes).digest('hex')!==match[1])throw Error('QA image checksum mismatch: '+path);
 }
 const setup=`
+const previewProduct=${previewProduct.toString()};
 const originalFetch=window.fetch.bind(window);
 const params=new URLSearchParams(location.search);
 let data=await originalFetch('/__qa/data').then(r=>r.json());
@@ -85,9 +87,9 @@ window.fetch=async(url,options={})=>{
  }
  if(action==='product'){
    if(params.get('detail')==='error')return answer({},500);
-   const id=Number(u.searchParams.get('id'));
-   if(signed&&signed!=='product_'+id&&u.searchParams.get('explore')!=='1')return answer({error:'explore required'},400);
-   const p=data.find(x=>x.id===id);return p?answer(p):answer({},404);
+   const id=u.searchParams.get('id'),publicationId=u.searchParams.get('publication_id');
+   if(signed&&signed!==(publicationId?'publication_'+publicationId:'product_'+id)&&u.searchParams.get('explore')!=='1')return answer({error:'explore required'},400);
+   const p=previewProduct(data,{id,publicationId});return p?answer(p):answer({},404);
  }
  if(action==='size-interest')return answer({status:params.get('outcome')||'available',checkId:'00000000-0000-4000-8000-000000000001'},202);
  if(action==='size-status')return answer({status:'unknown'});

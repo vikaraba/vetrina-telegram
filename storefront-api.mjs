@@ -103,7 +103,15 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
       return [...items.values()].filter(isCustomerVisibleProduct);
     },
     async product(id){const raw=await api('product',{id});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
-    async productByPublication(publicationId){const raw=await api('product',{publication_id:publicationId});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
+    async productByPublication(publicationId){
+      if(!Number.isSafeInteger(publicationId)||publicationId<=0)throw new StorefrontError(404);
+      const raw=await api('product',{publication_id:publicationId});
+      if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);
+      const product=normalizeProduct(raw);
+      // A publication launch must never silently fall back to another post.
+      if(product.telegramPublicationId!==publicationId||!product.telegramPostUrl)throw new StorefrontError(409);
+      return product;
+    },
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },
