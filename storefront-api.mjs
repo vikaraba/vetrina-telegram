@@ -1,4 +1,5 @@
 // Existing authenticated Edge contract. Never persist or put initData in a URL.
+import {colorLabel} from './catalog-core.mjs';
 export const API_BASE='https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront';
 export const MINI_APP_URL='https://t.me/aerofeevaBot/katalog';
 export function randomUuid(){
@@ -10,6 +11,11 @@ export function randomUuid(){
 export function requestedProductId(tg,search=''){
   const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(search).get('tgWebAppStartParam')||'');
   const match=/^product_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
+  return Number.isSafeInteger(id)?id:null;
+}
+export function requestedPublicationId(tg,search=''){
+  const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(search).get('tgWebAppStartParam')||'');
+  const match=/^publication_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
   return Number.isSafeInteger(id)?id:null;
 }
 export function clientContext(tg,pageSessionId){
@@ -25,12 +31,37 @@ export class StorefrontError extends Error{
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+  const onRequest=raw.priceMode==='on_request'&&brand==='Messika'&&priceAmount==null&&priceCurrency==null;
+  const inconsistent=raw.priceMode==='on_request'&&!onRequest;
+  const telegramPublicationId=Number(raw.telegramPublicationId);
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
+    priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
+    priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,
+    telegramPostUrl:telegramPostUrl(raw.telegramPostUrl),
+    telegramPublicationId:Number.isSafeInteger(telegramPublicationId)&&telegramPublicationId>0?telegramPublicationId:null};
+}
+export function isCustomerVisibleProduct(raw){
+  // These brands have no on-request exception: a missing or non-RUB customer
+  // price must not become an orderable card if an older API leaks the row.
+  const brand=String(raw?.brand||'').trim().toLowerCase();
+  if(brand!=='cartier'&&brand!=='chopard')return true;
+  return raw.priceMode!=='on_request'&&raw.priceCurrency==='RUB'&&
+    Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;
+}
+export function customerPriceLabel(product){
+  if(product.priceMode==='on_request'&&product.brand==='Messika'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
+  return product.priceCurrency==='RUB'&&Number.isFinite(product.priceAmount)&&product.priceAmount>0
+    ?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(product.priceAmount)+' ₽':'Цена уточняется';
 }
 export function telegramPostUrl(value){
   // Accept message permalinks only, never a source website, profile, invite or launch URL.
   if(typeof value!=='string')return null;
   return /^https:\/\/t\.me\/(?:c\/[1-9][0-9]*|[A-Za-z][A-Za-z0-9_]{4,31})\/(?:[1-9][0-9]*\/)?[1-9][0-9]*$/.test(value)&&!/[\s]/.test(value)?value:null;
+}
+export function catalogProductUrl(productId){
+  // This is the named Mini App's existing start parameter contract. Never
+  // substitute a supplier URL or a generic catalog homepage for a product.
+  return Number.isSafeInteger(productId)&&productId>0?`${MINI_APP_URL}?startapp=product_${productId}`:null;
 }
 export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=12000,sleep=ms=>new Promise(r=>setTimeout(r,ms)),pollAttempts=20}={}){
   const pageSessionId=randomUuid();let explored=false;
@@ -69,9 +100,18 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
         if(offset>10000)throw new StorefrontError(0);
       }
       if(items.size!==total)throw new StorefrontError(0);
-      return [...items.values()];
+      return [...items.values()].filter(isCustomerVisibleProduct);
     },
-    async product(id){return normalizeProduct(await api('product',{id}));},
+    async product(id){const raw=await api('product',{id});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
+    async productByPublication(publicationId){
+      if(!Number.isSafeInteger(publicationId)||publicationId<=0)throw new StorefrontError(404);
+      const raw=await api('product',{publication_id:publicationId});
+      if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);
+      const product=normalizeProduct(raw);
+      // A publication launch must never silently fall back to another post.
+      if(product.telegramPublicationId!==publicationId||!product.telegramPostUrl)throw new StorefrontError(409);
+      return product;
+    },
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },
@@ -103,11 +143,13 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
 }
 export function contactUrl(product,size){
   const post=telegramPostUrl(product.telegramPostUrl);
+  const card=catalogProductUrl(product.id);
   const message='Анастасия, здравствуйте!\n\nМеня интересует '+product.brand+' '+product.name+
-    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+product.color:'')+'.'+
+    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+colorLabel(product.color):'')+'.'+
     (size?'\nРазмер '+(product.category==='shoes'?'EU ':'')+size+'.':'')+
     '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!'+
-    (post?'\n\nПубликация в каталоге:\n'+post:'');
+    (post?'\n\nПубликация в каталоге:\n'+post:'')+
+    (card?'\n\nКарточка товара:\n'+card:'');
   return 'https://t.me/buyer_rome?text='+encodeURIComponent(message);
 }
 export function openContact(client,tg,product,size,navigate=url=>{globalThis.location.href=url;}){
