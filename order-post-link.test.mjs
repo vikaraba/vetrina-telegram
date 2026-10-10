@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {contactUrl,normalizeProduct,openContact,createStorefrontClient,telegramPostUrl,catalogProductUrl,requestedPublicationId} from './storefront-api.mjs';
 
 const original='https://t.me/c/3920029691/8354/9600';
-const product={id:343,brand:'On',name:'THE ROGER',category:'shoes',reference:'TEST-343',color:'White',telegramPostUrl:original};
+const product={id:343,brand:'On',name:'THE ROGER',category:'shoes',reference:'TEST-343',color:'White',
+  sourceId:'on_running_it',imageBucket:'product-images',imagePath:'synthetic/343.jpg',priceAmount:18000,priceCurrency:'RUB',telegramPostUrl:original};
 const text=p=>new URL(contactUrl(p,'42')).searchParams.get('text');
 
 test('order draft includes original CRM post exactly once and preserves model, size and recipient',()=>{
