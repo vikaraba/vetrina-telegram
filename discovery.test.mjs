@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {initial,matches,facets,sortItems,discountPercent,publicationTime,productCount,priceError} from './discovery-core.mjs';
 import {createStorefrontClient,normalizeProduct} from './storefront-api.mjs';
 import {productTitle,colorLabel,categoryLabel,categoryOf} from './catalog-core.mjs';
-const row=(id,extra={})=>({id,brand:'On',name:'Cloud X da donna',model:'Cloud X',category:'shoes',gender:'women',color:'White',priceCurrency:'RUB',priceAmount:18000,...extra});
+const row=(id,extra={})=>({id,brand:'On',name:'Cloud X da donna',model:'Cloud X',category:'shoes',gender:'women',color:'White',sourceId:'on_running_it',imageBucket:'product-images',imagePath:`synthetic/${id}.jpg`,priceCurrency:'RUB',priceAmount:18000,...extra});
 test('multiselect is OR within a facet and AND across facets',()=>{
  const until=new Date(Date.now()+3600000).toISOString();
  const products=[row(1,{availableSizes:['37.5']}),row(2,{availableSizes:['38']}),row(3,{gender:'men',availableSizes:['38']}),row(4,{availableSizes:['40']})].map(p=>({...p,availabilityValidUntil:until}));
