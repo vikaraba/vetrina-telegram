@@ -20,9 +20,15 @@ test('staging and production builds use only their own storefront endpoint',asyn
   assert.match(staging,/zwhdxuiuhtxugvhzopjo\.supabase\.co\/functions\/v1\/telegram-storefront/);
   assert.doesNotMatch(staging,/dbgcpgteuwkxqjgvppfp\.supabase\.co/);
   const stagingApp=await readFile(new URL('dist-staging/app.js',root),'utf8');
-  assert.match(stagingApp,/storageOrigin=new URL\(API_BASE\)\.origin/);
+  assert.match(stagingApp,/customerImageUrl\(i\)/);
   assert.doesNotMatch(stagingApp,/dbgcpgteuwkxqjgvppfp\.supabase\.co/,
     'staging images must use the staging API origin, including signed private media');
+  const stageModule=await import(new URL('dist-staging/storefront-api.mjs',root));
+  assert.equal(stageModule.customerImageUrl({bucket:'product-imports',path:'telegram/A.jpg',
+    url:'https://zwhdxuiuhtxugvhzopjo.supabase.co/storage/v1/object/sign/product-imports/telegram/A.jpg?token=synthetic'}),
+  'https://zwhdxuiuhtxugvhzopjo.supabase.co/storage/v1/object/sign/product-imports/telegram/A.jpg?token=synthetic');
+  assert.equal(stageModule.customerImageUrl({bucket:'product-imports',path:'telegram/A.jpg',
+    url:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/A.jpg?token=synthetic'}),null);
   const source=await readFile(new URL('storefront-api.mjs',root),'utf8');
   assert.equal(production,source,'the production build must remain byte-for-byte unchanged');
 });

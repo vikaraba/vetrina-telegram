@@ -28,6 +28,30 @@ export function clientContext(tg,pageSessionId){
 export class StorefrontError extends Error{
   constructor(status){super(status===401?'Сессия истекла. Закройте каталог и откройте его снова в Telegram.':status===404?'Модель сейчас недоступна. Выберите другой товар.':status===409?'Наличие изменилось. Уточните размер у Анастасии.':'Не удалось загрузить данные. Попробуйте ещё раз.');this.status=status;}
 }
+const storageOrigin=new URL(API_BASE).origin;
+function encodedMediaPath(path){
+  if(typeof path!=='string'||!path||path.trim()!==path||/[\\\u0000-\u001f\u007f]/u.test(path))return null;
+  const parts=path.split('/');
+  if(parts.some(part=>!part||part==='.'||part==='..'))return null;
+  try{return parts.map(encodeURIComponent).join('/');}catch{return null;}
+}
+export function customerImageUrl({bucket,path,url}={}){
+  const encoded=encodedMediaPath(path);
+  if(!encoded)return null;
+  const publicPath='/storage/v1/object/public/product-images/'+encoded;
+  const privatePath='/storage/v1/object/sign/product-imports/'+encoded;
+  if(bucket==='product-images'&&url==null)return storageOrigin+publicPath;
+  if(bucket!=='product-images'&&bucket!=='product-imports')return null;
+  if(typeof url!=='string')return null;
+  try{
+    const parsed=new URL(url);
+    if(parsed.origin!==storageOrigin||parsed.username||parsed.password||parsed.hash)return null;
+    if(bucket==='product-images')return parsed.pathname===publicPath&&!parsed.search?parsed.href:null;
+    const tokens=parsed.searchParams.getAll('token');
+    return parsed.pathname===privatePath&&tokens.length===1&&tokens[0].trim()&&
+      [...parsed.searchParams.keys()].every(key=>key==='token')?parsed.href:null;
+  }catch{return null;}
+}
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
   const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
@@ -40,9 +64,17 @@ export function normalizeProduct(raw){
   const freshAvailability=Number.isFinite(checkedAt)&&checkedAt<=Date.now()&&availableUntil>Date.now()&&availableUntil>checkedAt;
   const approvedDiscount=raw.discountVerified===true&&raw.previousPriceCurrency==='RUB'&&
     Number.isFinite(raw.previousPriceAmount)&&raw.previousPriceAmount>Number(priceAmount);
+  const safeCover=customerImageUrl({bucket:imageBucket,path:imagePath,url:imageUrl});
+  const safeGallery=(Array.isArray(images)?images:[]).flatMap((image,index)=>{
+    const bucket=image?.bucket,path=image?.path;
+    const url=image?.url??(Array.isArray(imageUrls)?imageUrls[index]:null);
+    const safe=customerImageUrl({bucket,path,url});
+    return safe?[{bucket,path,url:safe}]:[];
+  });
   return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
     priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
-    priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,
+    priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl:safeCover,
+    imageUrls:safeGallery.map(image=>image.url),images:safeGallery,sizes,description,sizeCount,
     // Optional authenticated list metadata: never derive dates from imports,
     // customer discounts from supplier prices, or stock from the size grid.
     publishedAt:Number.isFinite(publishedTime)&&publishedTime<=Date.now()?raw.publishedAt:null,
@@ -59,18 +91,8 @@ export function isCustomerVisibleProduct(raw){
   // for older/mismatched DTOs; a placeholder price is never an order action.
   const brand=String(raw?.brand||'').trim().toLowerCase();
   const sourceId=String(raw?.sourceId||'').trim();
-  const bucket=raw?.imageBucket,path=String(raw?.imagePath||'').trim();
-  const publicPhoto=bucket==='product-images'&&!!path;
-  let signedPrivatePhoto=false;
-  if(bucket==='product-imports'&&path&&typeof raw?.imageUrl==='string'){
-    try{
-      const url=new URL(raw.imageUrl);
-      signedPrivatePhoto=url.protocol==='https:'&&url.hostname===new URL(API_BASE).hostname&&
-        url.pathname.startsWith('/storage/v1/object/sign/product-imports/')&&url.searchParams.has('token');
-    }catch{/* Invalid or missing signed media URL stays hidden. */}
-  }
   if(!Number.isSafeInteger(Number(raw?.id))||Number(raw.id)<=0||!brand||!sourceId||
-    (!publicPhoto&&!signedPrivatePhoto))return false;
+    !customerImageUrl({bucket:raw?.imageBucket,path:raw?.imagePath,url:raw?.imageUrl}))return false;
   if(raw.priceMode==='on_request')return brand==='messika'&&sourceId==='messika_it'&&
     raw.priceAmount==null&&raw.priceCurrency==null;
   return raw.priceCurrency==='RUB'&&Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createStorefrontClient,requestedProductId,normalizeProduct,isCustomerVisibleProduct,customerPriceLabel,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
+import {createStorefrontClient,requestedProductId,normalizeProduct,isCustomerVisibleProduct,customerImageUrl,customerPriceLabel,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
 import {blankFilters,filterProducts,facets,setFilter,priceError} from './catalog-core.mjs';
 import {createLatestCheck,sizeValues,indexAtScroll} from './size-picker.mjs';
 const tg={initData:'synthetic-test-signature',initDataUnsafe:{start_param:'product_7'},platform:'test'};
@@ -91,6 +91,29 @@ test('priced catalog and direct product fail closed on EUR, absent source or mis
   const privatePhoto={...item(8),imageBucket:'product-imports',imagePath:'telegram/8.jpg',imageUrl:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/8.jpg?token=synthetic'};
   assert.equal(isCustomerVisibleProduct(privatePhoto),true);
   assert.equal(isCustomerVisibleProduct({...privatePhoto,imageUrl:privatePhoto.imageUrl.replace('dbgcpgteuwkxqjgvppfp','untrusted')}),false);
+});
+test('signed private cover and gallery URLs bind exact bucket/path and nonempty token',()=>{
+  const cover={bucket:'product-imports',path:'telegram/product-A.jpg',url:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/product-A.jpg?token=synthetic'};
+  assert.equal(customerImageUrl(cover),cover.url);
+  const base={...item(42),imageBucket:cover.bucket,imagePath:cover.path,imageUrl:cover.url};
+  for(const bad of [
+    cover.url.replace('product-A.jpg','product-B.jpg'),cover.url.replace('token=synthetic','token='),
+    cover.url.replace('token=synthetic','token=synthetic&token=other'),
+    cover.url.replace('/telegram/','/telegram%2F'),
+    cover.url.replace('product-imports/','product-images/'),
+    cover.url.replace('?token=synthetic','?token=synthetic#fragment')
+  ]){
+    assert.equal(customerImageUrl({...cover,url:bad}),null);
+    assert.equal(isCustomerVisibleProduct({...base,imageUrl:bad}),false);
+  }
+  const gallery=normalizeProduct({...base,images:[{bucket:cover.bucket,path:cover.path},
+    {bucket:cover.bucket,path:'telegram/product-B.jpg'}],imageUrls:[cover.url,cover.url]});
+  assert.deepEqual(gallery.images,[{bucket:cover.bucket,path:cover.path,url:cover.url}]);
+  assert.deepEqual(gallery.imageUrls,[cover.url]);
+  assert.equal(customerImageUrl({bucket:cover.bucket,path:'../product-A.jpg',url:cover.url}),null);
+  assert.equal(customerImageUrl({bucket:cover.bucket,path:'telegram/\ud800.jpg',url:cover.url}),null);
+  const unicode={bucket:'product-imports',path:'telegram/белая обувь.jpg',url:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/%D0%B1%D0%B5%D0%BB%D0%B0%D1%8F%20%D0%BE%D0%B1%D1%83%D0%B2%D1%8C.jpg?token=synthetic'};
+  assert.equal(customerImageUrl(unicode),unicode.url);
 });
 test('API errors are customer Russian, never SQL/backend details',async()=>{
   const c=createStorefrontClient({tg,fetchImpl:async()=>({ok:false,status:500,json:async()=>({error:'secret SQL'})})});

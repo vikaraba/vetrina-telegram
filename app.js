@@ -1,4 +1,4 @@
-import {createStorefrontClient,requestedProductId,requestedPublicationId,openContact,customerPriceLabel,MINI_APP_URL,API_BASE,StorefrontError} from './storefront-api.mjs?v=20261010-discovery';
+import {createStorefrontClient,requestedProductId,requestedPublicationId,openContact,customerPriceLabel,customerImageUrl,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20261010-discovery';
 import {mountDiscovery,discoveryState} from './discovery-ui.mjs?v=20261010-discovery';
 const tg=window.Telegram?.WebApp;
 tg?.ready();tg?.expand();
@@ -15,9 +15,8 @@ const title=productTitle;
 const color=p=>colorLabel(p.color)||'Цвет уточняется';
 const material=p=>jewelryMaterial(p)||({'Tela Monogram':'Канва Monogram','Altri pellami':'Кожа','AUTRES TOILES':'Канва','Pelle Monogram Empreinte':'Кожа Monogram Empreinte','Tela Damier Azur':'Канва Damier Azur','Fashion Leather':'Кожа','Monogram Reverse Canvas':'Канва Monogram Reverse'}[p.description?.split(' · ')[0]]||p.description?.split(' · ')[0]||'Уточним в личном сообщении');
 const gender=p=>p.gender==='men'?'Мужская модель':p.gender==='women'?'Женская модель':p.gender==='unisex'?'Унисекс':'Для кого — уточняется';
-const storageOrigin=new URL(API_BASE).origin;
-const imageUrl=i=>{if(i?.url){try{const u=new URL(i.url);const publicPhoto=u.pathname.startsWith('/storage/v1/object/public/product-images/');const privatePhoto=u.pathname.startsWith('/storage/v1/object/sign/product-imports/')&&u.searchParams.has('token');return u.origin===storageOrigin&&(publicPhoto||privatePhoto)?escapeHtml(u.href):'';}catch{return '';}}return i?.bucket==='product-images'&&i?.path?storageOrigin+'/storage/v1/object/public/product-images/'+escapeHtml(i.path.split('/').map(encodeURIComponent).join('/')):'';};
-const images=p=>[...new Map([{bucket:p.imageBucket,path:p.imagePath},...(p.images||[]),...(p.imageUrls||[]).map(url=>({url})),{url:p.imageUrl}].filter(i=>(i.path||i.url)&&imageUrl(i)).map(i=>[imageUrl(i),i])).values()];
+const imageUrl=i=>escapeHtml(customerImageUrl(i)||'');
+const images=p=>[...new Map([{bucket:p.imageBucket,path:p.imagePath,url:p.imageUrl},...(p.images||[])].filter(i=>customerImageUrl(i)).map(i=>[i.bucket+':'+i.path,i])).values()];
 const cover=p=>imageUrl(images(p)[0]);
 function event(type,extra={}){const map={gallery_image_viewed:'gallery_image_viewed',image_zoom_opened:'gallery_image_viewed',catalog_search:'catalog_search_submitted',catalog_filter:'catalog_filter_changed',catalog_explored:'catalog_search_opened'};const name=map[type];if(name)void client.track(name,state.product?.id||null,{size:state.size,source:state.source,start_param:tg?.initDataUnsafe?.start_param||null,timestamp:new Date().toISOString(),...(type==='image_zoom_opened'?{mode:'zoom'}:{}),...extra});}
 function announce(text){$('#announcement').textContent=text;}
