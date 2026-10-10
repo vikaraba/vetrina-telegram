@@ -1,5 +1,5 @@
 // Existing authenticated Edge contract. Never persist or put initData in a URL.
-import {colorLabel} from './catalog-core.mjs';
+import {colorLabel} from './catalog-core.mjs?v=20261010-discovery';
 export const API_BASE='https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront';
 export const MINI_APP_URL='https://t.me/aerofeevaBot/katalog';
 export function randomUuid(){
@@ -34,9 +34,23 @@ export function normalizeProduct(raw){
   const onRequest=raw.priceMode==='on_request'&&brand==='Messika'&&priceAmount==null&&priceCurrency==null;
   const inconsistent=raw.priceMode==='on_request'&&!onRequest;
   const telegramPublicationId=Number(raw.telegramPublicationId);
+  const publishedTime=typeof raw.publishedAt==='string'?Date.parse(raw.publishedAt):NaN;
+  const availableUntil=typeof raw.availabilityValidUntil==='string'?Date.parse(raw.availabilityValidUntil):NaN;
+  const checkedAt=typeof raw.availabilityCheckedAt==='string'?Date.parse(raw.availabilityCheckedAt):NaN;
+  const freshAvailability=Number.isFinite(checkedAt)&&checkedAt<=Date.now()&&availableUntil>Date.now()&&availableUntil>checkedAt;
+  const approvedDiscount=raw.discountVerified===true&&raw.previousPriceCurrency==='RUB'&&
+    Number.isFinite(raw.previousPriceAmount)&&raw.previousPriceAmount>Number(priceAmount);
   return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
     priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
     priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,
+    // Optional authenticated list metadata: never derive dates from imports,
+    // customer discounts from supplier prices, or stock from the size grid.
+    publishedAt:Number.isFinite(publishedTime)&&publishedTime<=Date.now()?raw.publishedAt:null,
+    discountVerified:approvedDiscount,
+    previousPriceAmount:approvedDiscount?raw.previousPriceAmount:null,
+    previousPriceCurrency:approvedDiscount?'RUB':null,
+    availableSizes:freshAvailability&&Array.isArray(raw.availableSizes)?raw.availableSizes.filter(s=>typeof s==='string'||typeof s==='number').map(String):[],
+    availabilityValidUntil:freshAvailability?raw.availabilityValidUntil:null,
     telegramPostUrl:telegramPostUrl(raw.telegramPostUrl),
     telegramPublicationId:Number.isSafeInteger(telegramPublicationId)&&telegramPublicationId>0?telegramPublicationId:null};
 }

@@ -1,5 +1,5 @@
 // Data-driven catalog rules. No API calls and no assumptions about stock.
-export const blankFilters=()=>({brand:'all',category:'all',gender:'all',model:'all',color:'all',size:'all',minPrice:'',maxPrice:''});
+export const blankFilters=()=>({brand:'all',department:'all',category:'all',gender:'all',model:'all',color:'all',size:'all',publication:'all',minPrice:'',maxPrice:''});
 const messikaCollections=['Messika Care(s)','Imperial Move','Move Classique','Move Titanium','Move Romane','Move Link','Move Noa','Move Uno','Lucky Move','So Move','D-Vibes','My Twin','Moderniste','Fiery'];
 export const modelName=p=>{
   if(p.brand==='Messika'){
@@ -14,8 +14,30 @@ export const modelName=p=>{
 const categoryLabels={shoes:'Обувь','bags-accessories':'Сумки и аксессуары',bags:'Сумки',jewelry:'Украшения',watches:'Часы',clothing:'Одежда',accessories:'Аксессуары',rings:'Кольца','wedding-rings':'Обручальные кольца',bracelets:'Браслеты',earrings:'Серьги',necklaces:'Колье и цепочки',pendants:'Подвески','necklaces-pendants':'Колье и подвески',other:'Другие товары'};
 const categoryAliases={'wedding band':'wedding-rings',nozze:'wedding-rings',fede:'wedding-rings',ring:'rings',anello:'rings','кольцо':'rings',bracelet:'bracelets',bracciale:'bracelets','браслет':'bracelets',earrings:'earrings',orecchini:'earrings','серьги':'earrings',pendants:'pendants',pendente:'pendants','подвеска':'pendants',necklace:'necklaces',collana:'necklaces','колье':'necklaces',necklaces_and_pendants:'necklaces-pendants','steel watches':'watches',watches:'watches',watch:'watches',orologi:'watches',orologio:'watches',orologi_gioiello:'watches',jewelry_watches:'watches','часы':'watches',gioielleria:'jewelry',gioielli:'jewelry'};
 // The legacy snapshot labels its bag/accessory category with a brand name.
-export const categoryOf=p=>p.category==='Louis Vuitton'?'bags-accessories':categoryAliases[String(p.category||'').trim().toLowerCase()]||p.category||'other';
-export const categoryLabel=value=>categoryLabels[value]||value;
+Object.assign(categoryLabels,{eyewear:'Очки',coats:'Пальто и тренчи',jackets:'Куртки и пуховики',dresses:'Платья',shirts:'Рубашки и блузы',knitwear:'Трикотаж',trousers:'Брюки и джинсы',skirts:'Юбки',shorts:'Шорты',suits:'Костюмы',tops:'Футболки и топы',belts:'Ремни',wallets:'Кошельки',hats:'Головные уборы',scarves:'Шарфы',backpacks:'Рюкзаки'});
+for(const [canonical,aliases] of Object.entries({
+  shoes:['scarpe','sneakers','stivali','обувь','кроссовки','кеды','лоферы','мюли','слингбэки','сандалии','туфли','сапоги','шлепки','угги'],
+  bags:['bag','bags','borsa','borse','сумка','сумки','портфель'],backpacks:['backpack','рюкзак'],
+  clothing:['abbigliamento','одежда'],accessories:['accessori','аксессуары','portachiavi'],
+  eyewear:['occhiali','очки'],coats:['cappotto','cappotti','пальто','плащ','тренч'],
+  jackets:['giacca','giacche','piumino','пуховик','куртка'],dresses:['abito','vestito','платье'],
+  shirts:['camicia','camicie','рубашка','блуза'],knitwear:['maglione','трикотаж','свитер','толстовка'],
+  trousers:['pantaloni','брюки','джинсы'],skirts:['gonna','юбка'],shorts:['шорты'],suits:['костюм'],
+  tops:['polo','t-shirt','поло','майка','футболка','топ'],belts:['cintura','ремень'],wallets:['portafoglio','кошелек','кошелёк','cardholder'],hats:['кепки','панама'],scarves:['шарф']
+}))for(const alias of aliases)categoryAliases[alias]=canonical;
+export const categoryOf=p=>p.category==='Louis Vuitton'?'bags-accessories':categoryAliases[String(p.category||'').trim().toLowerCase()]||(categoryLabels[p.category]?p.category:'other');
+export const categoryLabel=value=>categoryLabels[value]||'Другие товары';
+export const departments=[['all','Все товары'],['clothing','Одежда'],['shoes','Обувь'],['bags','Сумки'],['jewelry','Украшения'],['watches','Часы'],['accessories','Аксессуары']];
+export function departmentOf(p){
+  const category=categoryOf(p);
+  if(['rings','wedding-rings','bracelets','earrings','necklaces','pendants','necklaces-pendants','jewelry'].includes(category))return 'jewelry';
+  if(['coats','jackets','dresses','shirts','knitwear','trousers','skirts','shorts','suits','tops','clothing'].includes(category))return 'clothing';
+  if(['bags','bags-accessories','backpacks'].includes(category))return 'bags';
+  if(['eyewear','belts','wallets','hats','scarves','accessories'].includes(category))return 'accessories';
+  return category;
+}
+export const departmentLabel=value=>departments.find(([key])=>key===value)?.[1]||'Другие товары';
+export const hasPublishedPost=p=>typeof p.telegramPostUrl==='string'&&!/\s/.test(p.telegramPostUrl)&&/^https:\/\/t\.me\/(?:c\/[1-9][0-9]*|[A-Za-z][A-Za-z0-9_]{4,31})\/(?:[1-9][0-9]*\/)?[1-9][0-9]*$/.test(p.telegramPostUrl);
 export const watchReferenceLabel=p=>categoryOf(p)==='watches'&&String(p.reference||'').trim()?`Арт. ${String(p.reference).trim()}`:null;
 const jewelryBrand=p=>['Cartier','Van Cleef & Arpels','Messika'].includes(p.brand);
 // A collection/model is a filter, not the identity of a jewel. Keep the full
@@ -53,7 +75,7 @@ export function productTitle(p){
     [/\bantracite\b/gi,'антрацитового цвета'],[/\bnero\b/gi,'чёрного цвета'],[/\bgiallo\b/gi,'жёлтого цвета'],
     [/\bturchese\b/gi,'бирюзового цвета'],[/\brosa\b/gi,'розового цвета'],[/\barancione\b/gi,'оранжевого цвета']
   ])text=text.replace(pattern,replacement);
-  return text.trim();
+  return text.replace(/ciondolo/gi,'Подвеска').replace(/a 1 fiore/gi,'с одним цветком').replace(/fiore di prunus/gi,'цветок сливы').replace(/\(Ariete\)/gi,'(Овен)').trim();
 }
 export function jewelryMaterial(p){
   if(!jewelryBrand(p))return null;
@@ -62,17 +84,29 @@ export function jewelryMaterial(p){
   // Never label the whole marketing description as a material or infer purity.
   return facts.filter(([pattern])=>pattern.test(text)).map(([,label])=>label).join(' · ')||'Уточним в личном сообщении';
 }
-export const genderLabel=value=>({men:'Мужские',women:'Женские',unisex:'Унисекс'}[value]||value);
+export const genderLabel=value=>({men:'Мужские',women:'Женские',unisex:'Унисекс'}[value]||'Не указан');
 export const colorLabels={'Nero':'Чёрный','Rosso Ciliegia':'Вишнёвый','Rosa Ballerina':'Нежно-розовый','Altri pellami':'Кожа','Fashion Leather':'Кожа','GAZON':'Зелёный'};
-export const colorLabel=value=>colorLabels[value]||value;
-const norm=value=>String(value??'').normalize('NFKC').toLocaleLowerCase('ru').replace(/[|·/–—_-]/g,' ').replace(/\s+/g,' ').trim();
-const searchTerms=q=>norm(q).replace(/\b(lv|louisvuitton)\b/g,'louis vuitton').replace(/(^|\s)(лв|луи виттон|луи вуиттон)(?=\s|$)/g,' louis vuitton').split(' ').filter(Boolean);
+const colorWords={black:'Чёрный',white:'Белый',sand:'Песочный',glacier:'Ледяной',sakura:'Сакура',eclipse:'Графитовый',seedling:'Светло-зелёный',ice:'Ледяной',chai:'Бежевый',frost:'Морозный',evergreen:'Тёмно-зелёный',pearl:'Жемчужный',ivory:'Слоновая кость',cream:'Кремовый',silver:'Серебристый',navy:'Тёмно-синий',blue:'Синий',green:'Зелёный',pink:'Розовый',red:'Красный',brown:'Коричневый',beige:'Бежевый',grey:'Серый',gray:'Серый',giallo:'Жёлтый',bianco:'Белый',rosa:'Розовый',nero:'Чёрный'};
+Object.assign(colorWords,{asphalt:'Асфальт',lima:'Лима',desert:'Пустынный',earth:'Земляной',pebble:'Галька',fade:'Фейд',lime:'Лайм',fog:'Туман',cinder:'Пепельный',gourami:'Гурами',rock:'Каменный',wolf:'Вольф',honeydew:'Медовая роса',indigo:'Индиго',iceberg:'Айсберг',iron:'Железный',creek:'Крик',midnight:'Полночь',juniper:'Можжевельник',limelight:'Лаймлайт',lilac:'Сиреневый',linen:'Льняной',magnet:'Магнит',mineral:'Минеральный',obsidian:'Обсидиан',pelican:'Пеликан',peony:'Пион',heather:'Вереск',sailor:'Сэйлор',sunstone:'Солнечный камень',reef:'Риф',tempest:'Шторм',horizon:'Горизонт',chambray:'Шамбре',ore:'Руда'});
+Object.assign(colorLabels,{'All White':'Белый','Silver Blue':'Серебристо-голубой','Monogram Rouge':'Monogram, красный','Monogram Dune':'Monogram Дюна',Dune:'Дюна','Boldly Black':'Чёрный','Monogram Reverse':'Monogram Reverse','Link Quartz':'Линк Кварц',Azur:'Азур'});
+export const colorLabel=value=>colorLabels[value]||String(value||'').split(/\s*\|\s*/).map(word=>colorWords[word.toLowerCase()]||word).join(' / ');
+export const modelLabel=value=>{
+  const text=String(value||'');
+  // Never run jewelry unit translation over another brand's model code (LV MM).
+  if(!/^(anello|anelli|fedi|fede|orecchini|pendente|ciondolo|collan[ae]|braccial[ei])\b/i.test(text))return text;
+  return productTitle({brand:'Van Cleef & Arpels',name:text}).replace(/fedi nuziali/gi,'Обручальные кольца').replace(/\banelli\b/gi,'Кольца').replace(/\bbracciali\b/gi,'Браслеты').replace(/collane e pendenti/gi,'Колье и подвески');
+};
+const norm=value=>String(value??'').normalize('NFKC').toLocaleLowerCase('ru').replaceAll('ё','е').replace(/[|·/–—_-]/g,' ').replace(/\s+/g,' ').trim();
+const brandAliases=[[/\b(lv|louisvuitton)\b/g,'louis vuitton'],[/(^|\s)(лв|луи виттон|луи вуиттон)(?=\s|$)/g,' louis vuitton'],[/(^|\s)(ван клиф(?: энд арпелс)?|ванклиф)(?=\s|$)/g,' van cleef'],[/(^|\s)картье(?=\s|$)/g,' cartier'],[/(^|\s)мессика(?=\s|$)/g,' messika'],[/(^|\s)прада(?=\s|$)/g,' prada'],[/(^|\s)гуччи(?=\s|$)/g,' gucci'],[/(^|\s)диор(?=\s|$)/g,' dior'],[/(^|\s)монклер(?=\s|$)/g,' moncler']];
+const searchTerms=q=>brandAliases.reduce((text,[pattern,replacement])=>text.replace(pattern,replacement),norm(q)).split(' ').filter(Boolean);
 export const validPrice=p=>p.priceMode!=='on_request'&&p.priceCurrency==='RUB'&&Number.isFinite(p.priceAmount)&&p.priceAmount>0;
 export function priceError(f){
   for(const k of ['minPrice','maxPrice'])if(f[k]!==''&&(!/^\d+$/.test(String(f[k]))||!Number.isSafeInteger(Number(f[k]))))return 'Введите цену в целых рублях, не меньше 0.';
   return f.minPrice!==''&&f.maxPrice!==''&&Number(f.minPrice)>Number(f.maxPrice)?'Цена «от» не должна превышать цену «до».':'';
 }
 export function valuesFor(p,key){
+  if(key==='department')return [departmentOf(p)];
+  if(key==='publication')return hasPublishedPost(p)?['telegram']:[];
   if(key==='category')return [categoryOf(p)];
   if(key==='model')return modelName(p)?[modelName(p)]:[];
   if(key==='size')return [...new Set((p.sizes||[]).map(s=>String(s.value)).filter(Boolean))];
@@ -81,9 +115,9 @@ export function valuesFor(p,key){
 export function filterProducts(products,filters=blankFilters(),query='',exclude=''){
   const terms=searchTerms(query);
   return products.filter(p=>{
-    const haystack=norm([p.name,productTitle(p),p.brand,p.reference,modelName(p),p.color,colorLabel(p.color),categoryLabel(categoryOf(p))].join(' '));
+    const haystack=norm([p.name,productTitle(p),p.brand,p.reference,modelName(p),modelLabel(modelName(p)),p.color,colorLabel(p.color),categoryLabel(categoryOf(p)),departmentLabel(departmentOf(p)),genderLabel(p.gender)].join(' '));
     if(!terms.every(term=>haystack.includes(term)))return false;
-    for(const key of ['brand','category','gender','model','color','size'])if(key!==exclude&&filters[key]!=='all'&&!valuesFor(p,key).includes(filters[key]))return false;
+    for(const key of ['brand','department','category','gender','model','color','size','publication'])if(key!==exclude&&filters[key]!=null&&filters[key]!=='all'&&!valuesFor(p,key).includes(filters[key]))return false;
     if(exclude!=='price'&&(filters.minPrice!==''||filters.maxPrice!=='')){
       if(!validPrice(p))return false;
       if(filters.minPrice!==''&&p.priceAmount<Number(filters.minPrice))return false;
@@ -109,8 +143,8 @@ export function facets(products,filters,query,key){
 }
 export function setFilter(filters,key,value,products=null,query=''){
   const next={...filters,[key]:value};
-  if(key==='brand'||key==='category'){
-    const children=['model','color','size'];
+  if(key==='brand'||key==='category'||key==='department'){
+    const children=key==='department'?['category','model','color','size']:['model','color','size'];
     const selected=Object.fromEntries(children.map(child=>[child,next[child]]));
     for(const child of children)next[child]='all';
     // Brand/category changes preserve compatible choices. Clear only a child

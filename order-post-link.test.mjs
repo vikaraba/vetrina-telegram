@@ -20,7 +20,7 @@ test('supports public and private channel/topic message permalinks',()=>{
 });
 test('missing post links the exact Mini App card, never an unrelated source URL',()=>{
   const p={...product,telegramPostUrl:undefined,sourceUrl:'https://www.on.com/source',external_url:original};
-  assert.equal(text(p),'Анастасия, здравствуйте!\n\nМеня интересует On THE ROGER (артикул TEST-343), цвет White.\nРазмер EU 42.\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!\n\nКарточка товара:\nhttps://t.me/aerofeevaBot/katalog?startapp=product_343');
+  assert.equal(text(p),'Анастасия, здравствуйте!\n\nМеня интересует On THE ROGER (артикул TEST-343), цвет Белый.\nРазмер EU 42.\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!\n\nКарточка товара:\nhttps://t.me/aerofeevaBot/katalog?startapp=product_343');
   assert.equal(normalizeProduct(p).telegramPostUrl,null);
   assert.doesNotMatch(text(p),/on\.com\/source/);
 });

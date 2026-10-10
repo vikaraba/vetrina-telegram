@@ -44,9 +44,9 @@ let data=await originalFetch('/__qa/data').then(r=>r.json());
 if(params.get('catalog')==='empty')data=[];
 let catalogAttempts=0,telegramBack=()=>{};
 window.__miniappUatPerformance={homeVisibleMs:null,productVisibleMs:null,productHeroLoadedMs:null,productHeroFailed:false};
-const timing=document.createElement('output');timing.id='qa-performance';timing.style.cssText='display:block;font:11px monospace;padding:8px';document.body.append(timing);
+const timing=document.createElement('output');timing.id='qa-performance';timing.style.cssText='display:block;overflow-wrap:anywhere;font:11px monospace;padding:8px';document.body.append(timing);
 const visibleObserver=new MutationObserver(()=>{
-  if(window.__miniappUatPerformance.homeVisibleMs===null&&document.querySelector('#home-title'))
+  if(window.__miniappUatPerformance.homeVisibleMs===null&&document.querySelector('#heading'))
     window.__miniappUatPerformance.homeVisibleMs=Math.round(performance.now()*10)/10;
   if(window.__miniappUatPerformance.productVisibleMs===null&&document.querySelector('#hero-image'))
     window.__miniappUatPerformance.productVisibleMs=Math.round(performance.now()*10)/10;
@@ -98,7 +98,7 @@ window.fetch=async(url,options={})=>{
 };
 await import('/vetrina-telegram/app.js?v=${entryVersion}');
 `;
-const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs']);
+const assets=new Set(['index.html','app.js','style.css','discovery.css','catalog-core.mjs','discovery-core.mjs','discovery-ui.mjs','size-picker.mjs','storefront-api.mjs']);
 http.createServer(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
  res.setHeader('Content-Security-Policy',"default-src 'self'; img-src 'self' https://dbgcpgteuwkxqjgvppfp.supabase.co; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'");

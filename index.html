@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f8f7f3">
   <title>Каталог</title>
-  <link rel="stylesheet" href="./style.css?v=20261010-integrated">
+  <link rel="stylesheet" href="./style.css?v=20261010-discovery">
+  <link rel="stylesheet" href="./discovery.css?v=20261010-discovery">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script type="module" src="./app.js?v=20261010-integrated"></script>
+  <script type="module" src="./app.js?v=20261010-discovery"></script>
 </head>
 <body>
   <main id="app"><div class="loading-state" role="status"><span class="spinner"></span>Загружаем каталог…</div></main>
   <footer class="site-footer"><button class="icon-button" id="theme" aria-label="Переключить на тёмную тему"></button></footer>
-  <dialog id="filters-dialog" class="sheet" aria-labelledby="filters-title"><form method="dialog" class="sheet-shell"><div class="sheet-head"><h2 id="filters-title">Фильтры</h2><button class="icon-button" value="cancel" aria-label="Закрыть фильтры">×</button></div><div id="filter-fields" class="sheet-content"></div><div class="sheet-bottom"><button type="button" class="text-button" id="filters-reset">Сбросить</button><button type="button" class="primary" id="filters-apply">Показать товары</button></div></form></dialog>
   <dialog id="size-dialog" class="size-dialog" aria-labelledby="size-title">
     <div class="sheet-head"><h2 id="size-title">Выберите размер</h2><button class="icon-button" data-close="size-dialog" aria-label="Закрыть выбор размера">×</button></div>
     <div class="size-context" id="size-context"></div>
