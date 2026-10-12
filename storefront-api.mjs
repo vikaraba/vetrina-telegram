@@ -1,4 +1,5 @@
 // Existing authenticated Edge contract. Never persist or put initData in a URL.
+import {colorLabel} from './catalog-core.mjs?v=20261010-discovery';
 export const API_BASE='https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront';
 export const MINI_APP_URL='https://t.me/aerofeevaBot/katalog';
 export function randomUuid(){
@@ -12,6 +13,11 @@ export function requestedProductId(tg,search=''){
   const match=/^product_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
   return Number.isSafeInteger(id)?id:null;
 }
+export function requestedPublicationId(tg,search=''){
+  const raw=String(tg?.initDataUnsafe?.start_param||new URLSearchParams(search).get('tgWebAppStartParam')||'');
+  const match=/^publication_([1-9][0-9]*)$/.exec(raw),id=match?Number(match[1]):NaN;
+  return Number.isSafeInteger(id)?id:null;
+}
 export function clientContext(tg,pageSessionId){
   const s=globalThis.screen||{},nav=globalThis.navigator||{};
   return {schema_version:'telegram-webapp-client-v1',captured_at:new Date().toISOString(),page_session_id:pageSessionId,trust:'client_reported',
@@ -22,15 +28,90 @@ export function clientContext(tg,pageSessionId){
 export class StorefrontError extends Error{
   constructor(status){super(status===401?'Сессия истекла. Закройте каталог и откройте его снова в Telegram.':status===404?'Модель сейчас недоступна. Выберите другой товар.':status===409?'Наличие изменилось. Уточните размер у Анастасии.':'Не удалось загрузить данные. Попробуйте ещё раз.');this.status=status;}
 }
+const storageOrigin=new URL(API_BASE).origin;
+function encodedMediaPath(path){
+  if(typeof path!=='string'||!path||path.trim()!==path||/[\\\u0000-\u001f\u007f]/u.test(path))return null;
+  const parts=path.split('/');
+  if(parts.some(part=>!part||part==='.'||part==='..'))return null;
+  try{return parts.map(encodeURIComponent).join('/');}catch{return null;}
+}
+export function customerImageUrl({bucket,path,url}={}){
+  const encoded=encodedMediaPath(path);
+  if(!encoded)return null;
+  const publicPath='/storage/v1/object/public/product-images/'+encoded;
+  const privatePath='/storage/v1/object/sign/product-imports/'+encoded;
+  if(bucket==='product-images'&&url==null)return storageOrigin+publicPath;
+  if(bucket!=='product-images'&&bucket!=='product-imports')return null;
+  if(typeof url!=='string')return null;
+  try{
+    const parsed=new URL(url);
+    if(parsed.origin!==storageOrigin||parsed.username||parsed.password||parsed.hash)return null;
+    if(bucket==='product-images')return parsed.pathname===publicPath&&!parsed.search?parsed.href:null;
+    const tokens=parsed.searchParams.getAll('token');
+    return parsed.pathname===privatePath&&tokens.length===1&&tokens[0].trim()&&
+      [...parsed.searchParams.keys()].every(key=>key==='token')?parsed.href:null;
+  }catch{return null;}
+}
 export function normalizeProduct(raw){
   // Deliberately exclude internal/source prices returned by legacy API versions.
-  const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount}=raw;
-  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,priceAmount:priceAmount==null?null:Number(priceAmount),priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,description,sizeCount,telegramPostUrl:telegramPostUrl(raw.telegramPostUrl)};
+  const {id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,imageUrl,imageUrls,images,sizes,sizeCount}=raw;
+  const onRequest=raw.priceMode==='on_request'&&priceAmount==null&&priceCurrency==null;
+  const inconsistent=raw.priceMode==='on_request'&&!onRequest;
+  const telegramPublicationId=Number(raw.telegramPublicationId);
+  const publishedTime=typeof raw.publishedAt==='string'?Date.parse(raw.publishedAt):NaN;
+  const availableUntil=typeof raw.availabilityValidUntil==='string'?Date.parse(raw.availabilityValidUntil):NaN;
+  const checkedAt=typeof raw.availabilityCheckedAt==='string'?Date.parse(raw.availabilityCheckedAt):NaN;
+  const freshAvailability=Number.isFinite(checkedAt)&&checkedAt<=Date.now()&&availableUntil>Date.now()&&availableUntil>checkedAt;
+  const approvedDiscount=raw.discountVerified===true&&raw.previousPriceCurrency==='RUB'&&
+    Number.isFinite(raw.previousPriceAmount)&&raw.previousPriceAmount>Number(priceAmount);
+  const safeCover=customerImageUrl({bucket:imageBucket,path:imagePath,url:imageUrl});
+  const safeGallery=(Array.isArray(images)?images:[]).flatMap((image,index)=>{
+    const bucket=image?.bucket,path=image?.path;
+    const url=image?.url??(Array.isArray(imageUrls)?imageUrls[index]:null);
+    const safe=customerImageUrl({bucket,path,url});
+    return safe?[{bucket,path,url:safe}]:[];
+  });
+  return {id:Number(id),name,brand,category,model,color,gender,reference,sourceId,
+    priceMode:onRequest?'on_request':'priced',priceAmount:inconsistent||priceAmount==null?null:Number(priceAmount),
+    priceCurrency:inconsistent?null:priceCurrency,imageBucket,imagePath,imageUrl:safeCover,
+    imageUrls:safeGallery.map(image=>image.url),images:safeGallery,sizes,
+    description:typeof raw.customerDescriptionRu==='string'&&/[А-Яа-яЁё]/.test(raw.customerDescriptionRu)
+      ?raw.customerDescriptionRu:null,sizeCount,
+    // Optional authenticated list metadata: never derive dates from imports,
+    // customer discounts from supplier prices, or stock from the size grid.
+    publishedAt:Number.isFinite(publishedTime)&&publishedTime<=Date.now()?raw.publishedAt:null,
+    discountVerified:approvedDiscount,
+    previousPriceAmount:approvedDiscount?raw.previousPriceAmount:null,
+    previousPriceCurrency:approvedDiscount?'RUB':null,
+    availableSizes:freshAvailability&&Array.isArray(raw.availableSizes)?raw.availableSizes.filter(s=>typeof s==='string'||typeof s==='number').map(String):[],
+    availabilityValidUntil:freshAvailability?raw.availabilityValidUntil:null,
+    telegramPostUrl:telegramPostUrl(raw.telegramPostUrl),
+    telegramPublicationId:Number.isSafeInteger(telegramPublicationId)&&telegramPublicationId>0?telegramPublicationId:null};
+}
+export function isCustomerVisibleProduct(raw){
+  // The server owns publication approval. This is a second fail-closed boundary
+  // for older/mismatched DTOs; a placeholder price is never an order action.
+  const brand=String(raw?.brand||'').trim().toLowerCase();
+  const sourceId=String(raw?.sourceId||'').trim();
+  if(!Number.isSafeInteger(Number(raw?.id))||Number(raw.id)<=0||!brand||!sourceId||
+    !customerImageUrl({bucket:raw?.imageBucket,path:raw?.imagePath,url:raw?.imageUrl}))return false;
+  if(raw.priceMode==='on_request')return raw.priceAmount==null&&raw.priceCurrency==null;
+  return raw.priceCurrency==='RUB'&&Number.isFinite(Number(raw.priceAmount))&&Number(raw.priceAmount)>0;
+}
+export function customerPriceLabel(product){
+  if(product.priceMode==='on_request'&&product.priceAmount===null&&product.priceCurrency==null)return 'Цена по запросу';
+  return product.priceCurrency==='RUB'&&Number.isFinite(product.priceAmount)&&product.priceAmount>0
+    ?new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(product.priceAmount)+' ₽':'Цена уточняется';
 }
 export function telegramPostUrl(value){
   // Accept message permalinks only, never a source website, profile, invite or launch URL.
   if(typeof value!=='string')return null;
   return /^https:\/\/t\.me\/(?:c\/[1-9][0-9]*|[A-Za-z][A-Za-z0-9_]{4,31})\/(?:[1-9][0-9]*\/)?[1-9][0-9]*$/.test(value)&&!/[\s]/.test(value)?value:null;
+}
+export function catalogProductUrl(productId){
+  // This is the named Mini App's existing start parameter contract. Never
+  // substitute a supplier URL or a generic catalog homepage for a product.
+  return Number.isSafeInteger(productId)&&productId>0?`${MINI_APP_URL}?startapp=product_${productId}`:null;
 }
 export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=12000,sleep=ms=>new Promise(r=>setTimeout(r,ms)),pollAttempts=20}={}){
   const pageSessionId=randomUuid();let explored=false;
@@ -69,9 +150,18 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
         if(offset>10000)throw new StorefrontError(0);
       }
       if(items.size!==total)throw new StorefrontError(0);
-      return [...items.values()];
+      return [...items.values()].filter(isCustomerVisibleProduct);
     },
-    async product(id){return normalizeProduct(await api('product',{id}));},
+    async product(id){const raw=await api('product',{id});if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);return normalizeProduct(raw);},
+    async productByPublication(publicationId){
+      if(!Number.isSafeInteger(publicationId)||publicationId<=0)throw new StorefrontError(404);
+      const raw=await api('product',{publication_id:publicationId});
+      if(!isCustomerVisibleProduct(raw))throw new StorefrontError(404);
+      const product=normalizeProduct(raw);
+      // A publication launch must never silently fall back to another post.
+      if(product.telegramPublicationId!==publicationId||!product.telegramPostUrl)throw new StorefrontError(409);
+      return product;
+    },
     track(name,productId,details={}){
       return api('interaction',{}, {productId,interactionName:name,eventId:randomUuid(),details},4000).catch(()=>null);
     },
@@ -103,15 +193,18 @@ export function createStorefrontClient({tg,fetchImpl=globalThis.fetch,timeoutMs=
 }
 export function contactUrl(product,size){
   const post=telegramPostUrl(product.telegramPostUrl);
+  const card=catalogProductUrl(product.id);
   const message='Анастасия, здравствуйте!\n\nМеня интересует '+product.brand+' '+product.name+
-    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+product.color:'')+'.'+
+    (product.reference?' (артикул '+product.reference+')':'')+(product.color?', цвет '+colorLabel(product.color):'')+'.'+
     (size?'\nРазмер '+(product.category==='shoes'?'EU ':'')+size+'.':'')+
     '\n\nПодскажите, пожалуйста, актуальное наличие, итоговую стоимость и условия доставки. Спасибо!'+
-    (post?'\n\nПубликация в каталоге:\n'+post:'');
+    (post?'\n\nПубликация в каталоге:\n'+post:'')+
+    (card?'\n\nКарточка товара:\n'+card:'');
   return 'https://t.me/buyer_rome?text='+encodeURIComponent(message);
 }
 export function openContact(client,tg,product,size,navigate=url=>{globalThis.location.href=url;}){
   // Dispatch telemetry without awaiting it: a slow analytics API cannot block buying.
+  if(product.priceMode==='on_request')void client.track('price_inquiry_opened',product.id,{size:size||null});
   void client.track('contact_anastasia_opened',product.id,{size:size||null});
   const url=contactUrl(product,size);
   if(tg?.openTelegramLink)tg.openTelegramLink(url);else navigate(url);

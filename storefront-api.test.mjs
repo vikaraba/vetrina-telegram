@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createStorefrontClient,requestedProductId,normalizeProduct,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
+import {createStorefrontClient,requestedProductId,normalizeProduct,isCustomerVisibleProduct,customerImageUrl,customerPriceLabel,contactUrl,openContact,randomUuid,clientContext} from './storefront-api.mjs';
 import {blankFilters,filterProducts,facets,setFilter,priceError} from './catalog-core.mjs';
 import {createLatestCheck,sizeValues,indexAtScroll} from './size-picker.mjs';
 const tg={initData:'synthetic-test-signature',initDataUnsafe:{start_param:'product_7'},platform:'test'};
 const ok=value=>({ok:true,status:200,json:async()=>value});
-const item=id=>({id,brand:id%2?'On':'Louis Vuitton',name:'Model '+id,reference:'TEST-'+id,category:id%2?'shoes':'bags',gender:'women',model:'Model '+id,color:'White',priceAmount:10000+id,priceCurrency:'RUB'});
+const item=id=>({id,brand:id%2?'On':'Louis Vuitton',name:'Model '+id,reference:'TEST-'+id,category:id%2?'shoes':'bags',gender:'women',model:'Model '+id,color:'White',sourceId:id%2?'on_running_it':'louis_vuitton_it',imageBucket:'product-images',imagePath:`synthetic/${id}.jpg`,priceAmount:10000+id,priceCurrency:'RUB'});
 test('strict deep link accepts signed launch first, not arbitrary product query',()=>{
   assert.equal(requestedProductId(tg,'?tgWebAppStartParam=product_8'),7);
   for(const v of ['product_0','product_-1','product_1abc','product_9007199254740993','other'])assert.equal(requestedProductId(null,'?tgWebAppStartParam='+v),null);
@@ -33,11 +33,88 @@ test('catalog pagination reaches beyond100 without product detail calls or dupli
   const list=await c.catalog();assert.equal(list.length,234);assert.equal(new Set(list.map(p=>p.id)).size,234);
   assert.deepEqual(calls.map(u=>u.searchParams.get('offset')),['0','100','200']);assert.ok(calls.every(u=>u.searchParams.get('action')==='catalog'));
 });
+test('999/1000/1001 catalog rows with identical display tuples keep exact identity and count',async()=>{
+  for(const count of [999,1000,1001]){
+    const rows=Array.from({length:count},(_,index)=>({...item(index+1),name:'Same model',model:'Same model',color:'Black'}));
+    const client=createStorefrontClient({tg,fetchImpl:async url=>{
+      const offset=Number(url.searchParams.get('offset'));
+      return ok({items:rows.slice(offset,offset+100),total:count});
+    }});
+    const actual=await client.catalog();
+    assert.equal(actual.length,count);
+    assert.deepEqual(actual.map(p=>p.id),rows.map(p=>p.id));
+  }
+});
 test('empty catalog is valid; incomplete or duplicate pagination fails explicitly',async()=>{
   const make=payload=>createStorefrontClient({tg,fetchImpl:async()=>ok(payload)});
   assert.deepEqual(await make({items:[],total:0}).catalog(),[]);
   await assert.rejects(make({items:[],total:1}).catalog());
   await assert.rejects(make({items:[item(1),item(1)],total:2}).catalog());
+});
+test('Cartier and Chopard accept explicit on-request while invalid or EUR prices stay hidden',async()=>{
+  const rows=[
+    {...item(1),brand:'Cartier',priceAmount:null,priceCurrency:null},
+    {...item(2),brand:'CHOPARD',priceAmount:1200,priceCurrency:'EUR'},
+    {...item(3),brand:'Cartier',priceAmount:0,priceCurrency:'RUB'},
+    {...item(4),brand:'Chopard',priceMode:'on_request',priceAmount:null,priceCurrency:null},
+    {...item(5),brand:'Cartier',priceAmount:150000,priceCurrency:'RUB'},
+    {...item(6),brand:'CHOPARD',priceAmount:990000,priceCurrency:'RUB'},
+    {...item(7),brand:'Messika',sourceId:'messika_it',priceMode:'on_request',priceAmount:null,priceCurrency:null}
+  ];
+  const client=createStorefrontClient({tg,fetchImpl:async url=>{
+    if(url.searchParams.get('action')==='product')return ok(rows.find(p=>p.id===Number(url.searchParams.get('id'))));
+    const offset=Number(url.searchParams.get('offset'));
+    return ok({items:rows.slice(offset,offset+3),total:rows.length});
+  }});
+  assert.deepEqual((await client.catalog()).map(p=>p.id),[4,5,6,7]);
+  for(const id of [1,2,3])await assert.rejects(client.product(id),error=>error.status===404);
+  assert.equal(customerPriceLabel(await client.product(4)),'Цена по запросу');
+  assert.equal((await client.product(5)).priceAmount,150000);
+  assert.equal(customerPriceLabel(await client.product(7)),'Цена по запросу');
+  assert.equal(isCustomerVisibleProduct({...item(8),brand:' cartier ',priceAmount:'Infinity'}),false);
+});
+test('priced catalog and direct product fail closed on EUR, absent source or missing media',async()=>{
+  const invalid=[
+    {...item(1),priceCurrency:'EUR'},
+    {...item(2),sourceId:null},
+    {...item(3),imageBucket:null,imagePath:null},
+    {...item(4),imageBucket:'product-imports',imagePath:'telegram/4.jpg',imageUrl:null},
+    {...item(5),priceAmount:null},
+    {...item(6),priceMode:'priced',priceAmount:null,priceCurrency:null}
+  ];
+  const valid=item(7);
+  const client=createStorefrontClient({tg,fetchImpl:async url=>url.searchParams.get('action')==='product'
+    ?ok([...invalid,valid].find(p=>p.id===Number(url.searchParams.get('id'))))
+    :ok({items:[...invalid,valid],total:7})});
+  assert.deepEqual((await client.catalog()).map(p=>p.id),[7]);
+  for(const row of invalid)await assert.rejects(client.product(row.id),error=>error.status===404);
+  assert.equal((await client.product(7)).id,7);
+  const privatePhoto={...item(8),imageBucket:'product-imports',imagePath:'telegram/8.jpg',imageUrl:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/8.jpg?token=synthetic'};
+  assert.equal(isCustomerVisibleProduct(privatePhoto),true);
+  assert.equal(isCustomerVisibleProduct({...privatePhoto,imageUrl:privatePhoto.imageUrl.replace('dbgcpgteuwkxqjgvppfp','untrusted')}),false);
+});
+test('signed private cover and gallery URLs bind exact bucket/path and nonempty token',()=>{
+  const cover={bucket:'product-imports',path:'telegram/product-A.jpg',url:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/product-A.jpg?token=synthetic'};
+  assert.equal(customerImageUrl(cover),cover.url);
+  const base={...item(42),imageBucket:cover.bucket,imagePath:cover.path,imageUrl:cover.url};
+  for(const bad of [
+    cover.url.replace('product-A.jpg','product-B.jpg'),cover.url.replace('token=synthetic','token='),
+    cover.url.replace('token=synthetic','token=synthetic&token=other'),
+    cover.url.replace('/telegram/','/telegram%2F'),
+    cover.url.replace('product-imports/','product-images/'),
+    cover.url.replace('?token=synthetic','?token=synthetic#fragment')
+  ]){
+    assert.equal(customerImageUrl({...cover,url:bad}),null);
+    assert.equal(isCustomerVisibleProduct({...base,imageUrl:bad}),false);
+  }
+  const gallery=normalizeProduct({...base,images:[{bucket:cover.bucket,path:cover.path},
+    {bucket:cover.bucket,path:'telegram/product-B.jpg'}],imageUrls:[cover.url,cover.url]});
+  assert.deepEqual(gallery.images,[{bucket:cover.bucket,path:cover.path,url:cover.url}]);
+  assert.deepEqual(gallery.imageUrls,[cover.url]);
+  assert.equal(customerImageUrl({bucket:cover.bucket,path:'../product-A.jpg',url:cover.url}),null);
+  assert.equal(customerImageUrl({bucket:cover.bucket,path:'telegram/\ud800.jpg',url:cover.url}),null);
+  const unicode={bucket:'product-imports',path:'telegram/белая обувь.jpg',url:'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/sign/product-imports/telegram/%D0%B1%D0%B5%D0%BB%D0%B0%D1%8F%20%D0%BE%D0%B1%D1%83%D0%B2%D1%8C.jpg?token=synthetic'};
+  assert.equal(customerImageUrl(unicode),unicode.url);
 });
 test('API errors are customer Russian, never SQL/backend details',async()=>{
   const c=createStorefrontClient({tg,fetchImpl:async()=>({ok:false,status:500,json:async()=>({error:'secret SQL'})})});
@@ -78,6 +155,25 @@ test('contact opens synchronously, even when analytics never resolves; contains 
 test('customer DTO drops source cost and arbitrary private fields',()=>{
   const p=normalizeProduct({...item(1),priceEur:99,secret:'x'});assert.ok(!('priceEur'in p));assert.ok(!('secret'in p));
   assert.equal(normalizeProduct({...item(1),priceAmount:null}).priceAmount,null);
+});
+test('Messika on-request price is explicit and never inferred from null or EUR',()=>{
+  const messika=normalizeProduct({...item(1),brand:'Messika',sourceId:'messika_it',priceMode:'on_request',priceAmount:null,priceCurrency:null,priceEur:1200});
+  assert.equal(messika.priceMode,'on_request');
+  assert.equal(customerPriceLabel(messika),'Цена по запросу');
+  assert.ok(!('priceEur' in messika));
+  assert.equal(customerPriceLabel(normalizeProduct({...item(1),brand:'Messika',priceAmount:null,priceCurrency:null})),'Цена уточняется');
+  const inconsistent=normalizeProduct({...item(1),brand:'Messika',priceMode:'on_request',priceAmount:250000,priceCurrency:'RUB'});
+  assert.equal(customerPriceLabel(inconsistent),'Цена уточняется');
+  assert.equal(inconsistent.priceAmount,null);
+  assert.match(customerPriceLabel(normalizeProduct({...item(1),priceAmount:18000,priceCurrency:'RUB'})),/^18\s000 ₽$/u);
+});
+test('approved Russian copy is displayed, raw CRM description is never copied',()=>{
+  const product=normalizeProduct({...item(9),brand:'Cartier',priceMode:'on_request',
+    priceAmount:null,priceCurrency:null,description:'Supplier cost 800 EUR',
+    customerDescriptionRu:'Кольцо из жёлтого золота.'});
+  assert.equal(product.description,'Кольцо из жёлтого золота.');
+  assert.equal(customerPriceLabel(product),'Цена по запросу');
+  assert.equal(normalizeProduct({...item(10),description:'Wholesale 800 EUR'}).description,null);
 });
 test('UUID and client metadata preserve legacy schema',()=>{
   assert.match(randomUuid(),/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
