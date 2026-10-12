@@ -1,28 +1,24 @@
 # Contatto prodotto: copertura verificata (issue CRM #718)
 
-Questo incremento client aggiunge anche il lancio `startapp=publication_ID`,
-che richiede il read model CRM v3 della issue #718. Non modifica post Telegram,
-coda o ambienti. La migrazione CRM e il client devono superare lo stesso gate
-prima di essere attivati insieme.
+Questa tabella descrive il candidato Mini App #22 (head `4c330056`) e i touchpoint richiesti da #718. Non prova merge o rilascio. La regola approvata dall'utente è mostrare soltanto prodotti con almeno un post Telegram già pubblicato; i prodotti `READY` o mai pubblicati restano nascosti.
 
-| Ingresso | Identità disponibile oggi | Link nel messaggio ad Anastasia | Limite aperto |
+| Ingresso | Identità e comportamento | Messaggio a `@buyer_rome` | Stato e limite |
 | --- | --- | --- | --- |
-| Lancio Mini App da un post con `publication_ID` firmato | ID pubblicazione verificato dal server e read model CRM v3 | Post cliccato esatto + scheda prodotto | Serve che il publisher emetta il nuovo deep link; nessun vecchio post viene modificato. |
-| Scheda della Mini App aperta dal solo prodotto, con un unico post | ID prodotto e `telegramPostUrl` validato dal read model v3 | Unico post pubblicato + scheda Mini App esatta | Non equivale a una prova del post cliccato. |
-| Scheda della Mini App aperta dal solo prodotto, con più post | Solo ID prodotto | Scheda Mini App esatta, nessun post arbitrario | Non attribuire il primo post al clic senza `publication_ID`. |
-| Scheda della Mini App, senza post | ID prodotto positivo e sicuro | Scheda Mini App `startapp=product_ID` | La scheda richiede una sessione Telegram valida e che il prodotto resti visibile. |
-| Nuovi post fornitore Denis | ID pubblicazione nel sender CRM | Link firmato al post esatto dopo attivazione separata di #710/#18 | Non attivo finché la credenziale HMAC non è configurata; i vecchi post non vengono modificati. |
-| Post ON | Referenza nella CTA `buyer_rome?text=ON…` | Referenza, non identità del post cliccato | Serve adattare il sender con l'ID pubblicazione dopo l'invio. |
-| Nuovi post Gucci, Cartier, Louis Vuitton, Van Cleef e ON dai sender CRM | ID pubblicazione nel sender | Template comune con link firmato al post esatto, se configurato e se entra nella didascalia | Richiede migrazione CRM v3, deploy dei sender e UAT; il vecchio post non viene modificato. |
-| Post manuali già importati | ID pubblicazione e URL Telegram nel CRM | Resolver firmato disponibile per un link nuovo verso la pubblicazione | I vecchi post non vengono modificati in massa; non hanno automaticamente una nuova CTA. |
+| Mini App aperta dal post con `publication_ID` firmato | ID pubblicazione validato dal backend e collegato al prodotto | Post esatto cliccato + scheda esatta | Candidato #22; UAT autenticata su Telegram/iPhone `NOT_TESTED`. Nessun vecchio post modificato. |
+| Scheda prodotto aperta da `product_ID`, con un solo post Telegram pubblicato | ID prodotto e permalink pubblicato validato | Post unico + scheda esatta | Candidato #22. Non prova quale post sia stato cliccato senza `publication_ID`. |
+| Scheda prodotto aperta da `product_ID`, con più post pubblicati | Non sceglie arbitrariamente il primo post | Solo scheda esatta del prodotto | Candidato #22; UAT multi-post `NOT_TESTED`. Per attribuire il clic serve l'ID della pubblicazione. |
+| Prodotto già ammesso perché ha post pubblicati, ma il contesto non identifica un permalink esatto utilizzabile | Fallback `startapp=product_ID`; il prodotto deve essere già ammesso dal backend in base a pubblicazioni Telegram | Scheda esatta, senza inventare o scegliere un post | Vale, per esempio, se un prodotto pubblicato con più post è aperto da `product_ID`. Non rende visibile un prodotto mai pubblicato, compreso `READY`. |
+| Nuovi post fornitore Denis (proposta precedente #710/#18) | La proposta prevedeva l'ID pubblicazione nel sender | Post esatto tramite link firmato, se implementazione e configurazione lo supportano | Stato attuale di #710/#18, HMAC, deploy, UAT e produzione `UNKNOWN` / `NOT_TESTED`. Non inferire copertura dal CRM #816. Nessun vecchio post modificato. |
+| Post ON | Il sender candidato include il link firmato alla pubblicazione e il link Mini App ON | Post preciso + scheda ON | CRM #816 head `8ca3396`: review Claude SUCCESS status `56113404362` alle `2026-10-12T04:20:21Z`. Integrato nel candidato PR #794 con merge commit `543afd6c614fcd4cf652d2bf8fac1bec3b99c079` (non in `main`). CI run 1811 / run `38204973208` / job verify `114666336737`: SUCCESS, 1.767 test passati, 0 falliti, 328 file di test. Review sul nuovo SHA `543afd6c` pending; staging, UAT e produzione `NOT_TESTED`. |
+| Nuovi post Gucci, Cartier, Louis Vuitton, Van Cleef e ON dai sender CRM | Il candidato sender aggiunge il link esatto e rifiuta l'invio se non può applicarlo | Link alla pubblicazione corretta | Il merge `543afd6c` integra il codice candidato #816 nel candidato #794, non in `main`. CI verde sul nuovo SHA; review `543afd6c` pending, staging/UAT/live `NOT_TESTED`. Nessuna prova di disponibilità ai clienti. |
+| Post manuali o storici già importati | Resolver solo per pubblicazioni verificate; nessun inserimento retroattivo di CTA | Nessuna modifica automatica ai post esistenti | Inventario storico `no_edit` e piano read-only ancora da completare. Non sono stati modificati post. |
 
-Il template comune CRM prepara il link firmato per i cinque sender di marca.
-La prossima fase deve validare i post futuri realmente emessi e individuare le
-CTA dei flussi legacy/manuali che non usano quei sender. Quando il post non
-esiste, usare solo la scheda Mini
-App con ID prodotto validato. Non ricavare link dal sito del fornitore, da
-payload privati o da URL arbitrari. Conservare la taglia nel testo, non costi,
-margini o note CRM.
+## Confini della prova
 
-La conferma reale del deep link su iPhone/Telegram e la prova multi-post
-richiedono UAT autenticata prima di un rilascio pubblico di questo incremento.
+Il codice companion #19 è rappresentato nei candidati #20/#22, ma #19, #20 e #22 non risultano integrate o ospitate nelle evidenze raccolte. Il codice CRM #816 ha superato review Claude e CI prima dell'integrazione nel candidato #794 `543afd6c`; la review del nuovo SHA è pending. Staging/UAT e produzione restano `NOT_TESTED`. Non dichiarare la funzione disponibile ai clienti prima dei gate sullo SHA finale.
+
+Misura selezionata, passaggio fra più pubblicazioni e navigazione effettiva in Telegram su iPhone sono `NOT_TESTED` in UAT reale. I test sintetici non sostituiscono queste prove.
+
+La descrizione russa esposta è protetta da approvazione/audit. I campi strutturati `nome` e `colore` sono forniti dal server, ma la loro approvazione come testo cliente non è dimostrata: provenienza privacy `UNKNOWN`. Non è stato osservato alcun dato sensibile divulgato e non si afferma che esista una fuga.
+
+La regola `no_edit` resta valida: nessun edit o invio massivo dei post storici. Non ricavare permalink da fonti fornitore, payload privati o URL non verificati; non includere costi fornitore, margini o note CRM nel testo cliente. Conservare la taglia scelta nel messaggio.
