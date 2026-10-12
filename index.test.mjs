@@ -49,6 +49,14 @@ test('ON verification is centered beneath price while ordering stays in the mobi
   assert.match(app,/textContent='Проверить размеры'/);
   assert.match(css,/\.size-trigger--verify\{[^}]*justify-content:center/);
   assert.match(app,/class="mobile-dock"[^`]*id="dock-contact"/);
-  assert.match(app,/const label=state\.check==='pending'\?'Проверяем…':'Заказать'/);
+  assert.match(app,/state\.product\?\.priceMode==='on_request'\?'Узнать цену':'Заказать'/);
+});
+test('on-request detail uses a price inquiry and only edited Russian customer copy',()=>{
+  assert.match(app,/state\.product\?\.priceMode==='on_request'\?'Узнать цену':'Заказать'/);
+  assert.match(app,/p\.priceMode!=='on_request'&&sizeValues\(p\)\.length/);
+  assert.match(app,/copy\.textContent=p\.description/);
+  assert.match(api,/description:typeof raw\.customerDescriptionRu==='string'/);
+  assert.match(api,/price_inquiry_opened/);
+  assert.doesNotMatch(api,/description:raw\.description/);
 });
 test('catalog fetch does not auto-open product details or fabricate all-size facets',()=>{assert.doesNotMatch(app,/select\('size','Размер'/);assert.match(app,/publicationId\?await client.productByPublication\(publicationId\):await client.product\(id\)/);assert.match(app,/state.products=products/);});

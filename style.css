@@ -166,3 +166,4 @@ body:has(dialog[open]) .mobile-dock{visibility:hidden}
  .brand-card-categories{font-size:12px}.brand-card-bottom{font-size:12px;padding-top:16px}
  .catalog-nav{gap:14px;margin-bottom:10px}.catalog-nav h1{font-size:21px}
 }
+.customer-description{max-width:54ch;margin:14px 0;color:var(--ink);font-size:15px;line-height:1.55;overflow-wrap:anywhere}
