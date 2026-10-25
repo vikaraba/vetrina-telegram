@@ -10,7 +10,13 @@ const fixture=process.env.MINIAPP_UAT_FIXTURE;
 if(!fixture)throw Error('Set MINIAPP_UAT_FIXTURE to a read-only product DTO JSON fixture.');
 const raw=JSON.parse(await readFile(fixture,'utf8'));
 const products=raw.map(({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl})=>({id,name,brand,category,model,color,gender,reference,sourceId,priceAmount,priceCurrency,imageBucket,imagePath,images,sizes,description,telegramPostUrl}));
+const originSource=await readFile(new URL('public-origins.mjs',root),'utf8');
+const allowedOrigins=['https://dbgcpgteuwkxqjgvppfp.supabase.co','https://zwhdxuiuhtxugvhzopjo.supabase.co'];
+const origins=allowedOrigins.filter(origin=>originSource.includes("SUPABASE_ORIGIN='"+origin+"'"));
+if(origins.length!==1)throw Error('Unrecognized public build origin');
+const allowedOrigin=origins[0];
 const setup=`
+const allowedOrigin=${JSON.stringify(allowedOrigin)};
 const originalFetch=window.fetch.bind(window);
 const params=new URLSearchParams(location.search);
 let data=await originalFetch('/__qa/data').then(r=>r.json());
@@ -23,7 +29,7 @@ const signed=params.get('tgWebAppStartParam')||'';
 window.Telegram={WebApp:{initData:params.has('unauthenticated')?'':'LOCAL_CONTRACT_FIXTURE_NOT_A_SIGNATURE',initDataUnsafe:{start_param:signed},colorScheme:params.get('theme')||'light',ready(){},expand(){},BackButton:{onClick(fn){telegramBack=fn;},show(){back.hidden=false;},hide(){back.hidden=true;}},onEvent(){},openTelegramLink(url){record({contact:decodeURIComponent(url)});document.getElementById('qa-status').textContent='LOCAL CONTACT: '+decodeURIComponent(url);}}};
 const status=document.createElement('output');status.id='qa-status';status.textContent='LOCAL CONTRACT UAT · no external requests/messages';status.style.cssText='display:block;font:12px monospace;padding:12px;background:#eee;color:#111;overflow-wrap:anywhere';document.body.append(status);
 window.fetch=async(url,options={})=>{
- const u=new URL(url,location.href);if(u.hostname!==location.hostname&&u.hostname!=='dbgcpgteuwkxqjgvppfp.supabase.co')throw Error('Blocked by UAT');
+ const u=new URL(url,location.href);if(u.hostname!==location.hostname&&u.origin!==allowedOrigin)throw Error('Blocked by UAT');
  const action=u.searchParams.get('action'),body=options.body?JSON.parse(options.body):{};
  record({action,id:u.searchParams.get('id'),offset:u.searchParams.get('offset'),explore:u.searchParams.get('explore'),size:body.size||null,interaction:body.interactionName||null});
  const answer=(value,code=200)=>new Response(JSON.stringify(value),{status:code,headers:{'Content-Type':'application/json'}});
@@ -48,10 +54,10 @@ window.fetch=async(url,options={})=>{
 };
 await import('/vetrina-telegram/app.js?v=20260927-jewelry');
 `;
-const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs']);
+const assets=new Set(['index.html','app.js','style.css','catalog-core.mjs','size-picker.mjs','storefront-api.mjs','public-origins.mjs','product-image.mjs']);
 http.createServer(async(req,res)=>{
  res.setHeader('Cache-Control','no-store');
- res.setHeader('Content-Security-Policy',"default-src 'self'; img-src 'self' https://dbgcpgteuwkxqjgvppfp.supabase.co; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'");
+ res.setHeader('Content-Security-Policy',"default-src 'self'; img-src 'self' "+allowedOrigin+"; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'");
  if(req.method!=='GET'){res.writeHead(405);res.end();return;}
  const path=new URL(req.url,'http://localhost').pathname;
  try{

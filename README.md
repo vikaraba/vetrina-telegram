@@ -63,7 +63,13 @@ Node24, nessuna dipendenza da installare:
 npm run verify
 ```
 
-Il build locale produce in `dist/` solo sei asset pubblici e il manifest SHA256.
+Il build locale produce in `dist/` gli asset pubblici e il manifest SHA256.
+Il sorgente e il build predefinito usano sempre produzione. Per collaudare
+staging, usare `MINIAPP_BUILD_TARGET=staging npm run build`: il build sostituisce
+solo l'origine Supabase pubblica con il ref staging approvato, sia per API sia
+per immagini e per il contatto breve `ask.html`. Altri target vengono rifiutati.
+Non usare il build staging per GitHub Pages o Sites produzione; dopo il collaudo
+rigenerare il build predefinito.
 Il workflow PR esegue un gate unico, annulla le revisioni obsolete e ignora draft.
 Pages usa la configurazione esistente `main:/`; `_config.yml` esclude script,
 test e documenti. Il merge è quindi il confine di rilascio pubblico.
@@ -79,7 +85,9 @@ iniettato solo da quel server, escluso da Pages. Non equivale a una verifica
 autenticata in Telegram o su iPhone fisico.
 
 Per collaudare un build congelato, impostare `MINIAPP_UAT_BUILD` alla directory
-dei sei asset e `MINIAPP_UAT_PORT` a una porta locale libera. Le query locali
+degli asset e `MINIAPP_UAT_PORT` a una porta locale libera. La preview consente
+solo l'origine immagini del build selezionato; la sua API resta simulata. Una
+foto staging richiede un oggetto realmente presente nello Storage staging. Le query locali
 `catalog=empty|error|retry`, `detail=error`, `unauthenticated=1`,
 `outcome=available|unavailable|unknown|failed|queued` e `theme=dark` coprono gli
 stati limite. Il log visibile e il pulsante Telegram Back simulato consentono
