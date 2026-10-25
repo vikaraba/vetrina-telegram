@@ -1,4 +1,5 @@
 import {createStorefrontClient,requestedProductId,openContact,MINI_APP_URL,StorefrontError} from './storefront-api.mjs?v=20260927-jewelry';
+import {productImageUrl} from './product-image.mjs?v=20261026-c312-origins';
 const tg=window.Telegram?.WebApp;
 tg?.ready();tg?.expand();
 const client=createStorefrontClient({tg});
@@ -15,7 +16,7 @@ const colors={'Nero':'Чёрный','Rosso Ciliegia':'Вишнёвый','Rosa Ba
 const color=p=>colors[p.color]||p.color||'Цвет уточняется';
 const material=p=>jewelryMaterial(p)||({'Tela Monogram':'Канва Monogram','Altri pellami':'Кожа','AUTRES TOILES':'Канва','Pelle Monogram Empreinte':'Кожа Monogram Empreinte','Tela Damier Azur':'Канва Damier Azur','Fashion Leather':'Кожа','Monogram Reverse Canvas':'Канва Monogram Reverse'}[p.description?.split(' · ')[0]]||p.description?.split(' · ')[0]||'Уточним в личном сообщении');
 const gender=p=>p.gender==='men'?'Мужская модель':p.gender==='women'?'Женская модель':'Унисекс';
-const imageUrl=i=>{if(i?.url){try{const u=new URL(i.url);return u.protocol==='https:'&&u.hostname==='dbgcpgteuwkxqjgvppfp.supabase.co'?escapeHtml(u.href):'';}catch{return '';}}return i?.bucket==='product-images'&&i?.path?'https://dbgcpgteuwkxqjgvppfp.supabase.co/storage/v1/object/public/product-images/'+escapeHtml(i.path.split('/').map(encodeURIComponent).join('/')):'';};
+const imageUrl=i=>escapeHtml(productImageUrl(i));
 const images=p=>[...new Map([{bucket:p.imageBucket,path:p.imagePath},...(p.images||[]),...(p.imageUrls||[]).map(url=>({url})),{url:p.imageUrl}].filter(i=>(i.path||i.url)&&imageUrl(i)).map(i=>[imageUrl(i),i])).values()];
 const cover=p=>imageUrl(images(p)[0]);
 function event(type,extra={}){const map={gallery_image_viewed:'gallery_image_viewed',image_zoom_opened:'gallery_image_viewed',catalog_search:'catalog_search_submitted',catalog_filter:'catalog_filter_changed',catalog_explored:'catalog_search_opened'};const name=map[type];if(name)void client.track(name,state.product?.id||null,{size:state.size,source:state.source,start_param:tg?.initDataUnsafe?.start_param||null,timestamp:new Date().toISOString(),...(type==='image_zoom_opened'?{mode:'zoom'}:{}),...extra});}

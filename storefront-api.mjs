@@ -1,5 +1,6 @@
 // Existing authenticated Edge contract. Never persist or put initData in a URL.
-export const API_BASE='https://dbgcpgteuwkxqjgvppfp.supabase.co/functions/v1/telegram-storefront';
+import {API_BASE} from './public-origins.mjs?v=20261026-c312-origins';
+export {API_BASE};
 export const MINI_APP_URL='https://t.me/aerofeevaBot/katalog';
 export function randomUuid(){
   if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
